@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Scouts Roll</title>
+<style>
+  :root {
+    --navy: #00348D;
+    --navy-dark: #002270;
+    --navy-light: #1a4fa8;
+    --gold: #F4A800;
+    --gold-light: #FFD166;
+    --green: #2ECC71;
+    --green-dark: #27AE60;
+    --red: #E74C3C;
+    --bg: #F0F4FF;
+    --surface: #FFFFFF;
+    --border: #D0DCFF;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,52,141,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    color: white;
+    padding: 16px 20px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-subtitle {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  .fleur-de-lis {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  /* SCREENS */
+  .screen { display: none; padding: 20px; max-width: 540px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* LOGIN */
+  .login-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+  }
+  .login-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--navy);
+  }
+  .login-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .field input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--navy); background: white; }
+  .field .hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 5px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger { background: var(--red); color: white; margin-top: 12px; }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  .error-msg {
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* EVENTS LIST */
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 20px 0 10px;
+  }
+  .event-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1.5px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .event-card:hover { border-color: var(--navy); transform: translateY(-1px); }
+  .event-card:active { transform: scale(0.98); }
+  .event-date-badge {
+    background: var(--navy);
+    color: white;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    min-width: 48px;
+    flex-shrink: 0;
+  }
+  .event-date-badge .day { font-size: 20px; font-weight: 800; line-height: 1; }
+  .event-date-badge .mon { font-size: 11px; opacity: 0.8; text-transform: uppercase; }
+  .event-info { flex: 1; min-width: 0; }
+  .event-info h3 { font-size: 16px; font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .event-info p { font-size: 13px; color: var(--text-muted); }
+  .event-arrow { color: var(--text-muted); font-size: 18px; }
+  .event-status {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #FEF3C7;
+    color: #B45309;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  .event-status.done { background: #D1FAE5; color: #065F46; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ROLL SCREEN */
+  .roll-header {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .roll-header h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+  .roll-header p { font-size: 13px; color: var(--text-muted); }
+  .roll-meta { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+  .roll-meta span { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+  .attendance-summary {
+    background: var(--navy);
+    color: white;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .att-count { font-size: 32px; font-weight: 800; line-height: 1; }
+  .att-label { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .att-fraction { font-size: 14px; opacity: 0.7; }
+
+  .quick-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .quick-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .quick-btn:hover { background: var(--bg); }
+
+  .member-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+  .member-row {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.12s;
+    border: 2px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .member-row.present {
+    border-color: var(--green);
+    background: #F0FFF6;
+  }
+  .member-row:active { transform: scale(0.98); }
+
+  .member-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.12s;
+  }
+  .member-row.present .member-avatar { background: var(--green-dark); }
+
+  .member-name { flex: 1; font-size: 16px; font-weight: 600; }
+  .member-patrol { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  .tick {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.12s;
+    flex-shrink: 0;
+    color: transparent;
+  }
+  .member-row.present .tick {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  .save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,52,141,0.10);
+  }
+  .save-bar .btn { flex: 1; padding: 14px; font-size: 15px; }
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 10px;
+    width: 48px;
+    min-width: 48px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* SUCCESS */
+  .success-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 36px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+  }
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+  .success-card h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .success-card p { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 6px; }
+  .success-detail { font-size: 14px; color: var(--text-muted); background: var(--bg); border-radius: 10px; padding: 12px 16px; margin: 16px 0; text-align: left; }
+  .success-detail div { margin-bottom: 6px; display: flex; gap: 8px; }
+  .success-detail div:last-child { margin-bottom: 0; }
+  .success-detail .label { font-weight: 600; color: var(--navy); min-width: 80px; }
+
+  /* LOADING */
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  .spinner.dark {
+    border-color: rgba(0,52,141,0.15);
+    border-top-color: var(--navy);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state { text-align: center; padding: 40px 20px; }
+  .loading-state p { margin-top: 16px; color: var(--text-muted); font-size: 15px; }
+
+  .logout-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    text-decoration: underline;
+  }
+  .logout-btn:hover { color: white; }
+
+  @media (max-width: 400px) {
+    .screen { padding: 14px; }
+    .member-name { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Scouts Roll</h1>
+      <div class="header-subtitle" id="header-subtitle">Sign in to take the roll</div>
+    </div>
+    <div class="fleur-de-lis">⚜️</div>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div class="screen active" id="screen-login">
+  <div class="login-card">
+    <h2>Sign in to Terrain</h2>
+    <p>Use your regular Scouts Australia Terrain login. Your credentials are sent directly to Scouts Australia — this app never stores them.</p>
+
+    <div class="error-msg" id="login-error"></div>
+
+    <div class="field">
+      <label>Member ID</label>
+      <input type="text" id="input-username" placeholder="e.g. vic-123456" autocomplete="username" autocapitalize="none" />
+      <div class="hint">Format: branch-memberid (e.g. vic-123456)</div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="input-password" placeholder="Your Terrain password" autocomplete="current-password" />
+    </div>
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()">
+      Sign in
+    </button>
+  </div>
+</div>
+
+<!-- EVENTS SCREEN -->
+<div class="screen" id="screen-events">
+  <div id="events-loading" class="loading-state">
+    <div class="spinner dark"></div>
+    <p>Loading your events…</p>
+  </div>
+  <div id="events-content" style="display:none">
+    <div class="section-label">Recent & upcoming meetings</div>
+    <div id="events-list" class="member-list"></div>
+    <button class="btn btn-outline" onclick="doLogout()" style="margin-top:8px">Sign out</button>
+  </div>
+</div>
+
+<!-- ROLL SCREEN -->
+<div class="screen" id="screen-roll">
+  <div class="roll-header">
+    <h2 id="roll-event-title">Event</h2>
+    <p id="roll-event-date"></p>
+    <div class="roll-meta">
+      <span id="roll-event-location"></span>
+    </div>
+  </div>
+
+  <div class="attendance-summary">
+    <div>
+      <div class="att-count" id="att-count">0</div>
+      <div class="att-label">present tonight</div>
+    </div>
+    <div class="att-fraction" id="att-fraction">of 0 members</div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="quick-btn" onclick="markAll(true)">✓ Mark all present</button>
+    <button class="quick-btn" onclick="markAll(false)">✗ Clear all</button>
+  </div>
+
+  <div class="member-list" id="member-list"></div>
+
+  <div style="height: 80px"></div>
+
+  <div class="save-bar">
+    <button class="btn-back" onclick="showScreen('events')" title="Back">←</button>
+    <button class="btn btn-primary" id="btn-save" onclick="doSave()">
+      Save to Terrain
+    </button>
+  </div>
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="screen" id="screen-success">
+  <div class="success-card">
+    <div class="success-icon">🎉</div>
+    <h2>Roll saved!</h2>
+    <p>Attendance has been recorded in Terrain.</p>
+    <div class="success-detail" id="success-detail"></div>
+    <button class="btn btn-primary" onclick="showScreen('events')" style="margin-top:8px">Back to events</button>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let authToken = null;
+let unitId = null;
+let currentEvent = null;
+let members = [];       // [{id, first_name, last_name, ...}]
+let memberAgenda = {};  // member_id -> agenda data
+let attendance = {};    // member_id -> boolean
+
+// ─── COGNITO AUTH ────────────────────────────────────────────────────────────
+// Terrain uses AWS Cognito for auth
+const COGNITO_URL = 'https://cognito-idp.ap-southeast-2.amazonaws.com/';
+const CLIENT_ID = '6v98tbc09aqfvh52fml3usas3c'; // Terrain's Cognito client ID
+
+async function doLogin() {
+  const username = document.getElementById('input-username').value.trim();
+  const password = document.getElementById('input-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('btn-login');
+
+  errEl.classList.remove('show');
+
+  if (!username || !password) {
+    errEl.textContent = 'Please enter your member ID and password.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const res = await fetch(COGNITO_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-amz-json-1.1',
+        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+      },
+      body: JSON.stringify({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: CLIENT_ID,
+        AuthParameters: {
+          USERNAME: username,
+          PASSWORD: password
+        }
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.AuthenticationResult) {
+      const msg = data.message || data.__type || 'Login failed. Check your member ID and password.';
+      throw new Error(msg);
+    }
+
+    authToken = data.AuthenticationResult.IdToken;
+
+    // Decode token to get member info
+    const payload = JSON.parse(atob(authToken.split('.')[1]));
+    const memberId = payload['custom:memberid'] || payload['cognito:username'];
+    unitId = payload['custom:unitid'];
+
+    // Try to get unit ID from profile if not in token
+    if (!unitId) {
+      await fetchProfile(memberId);
+    }
+
+    document.getElementById('header-subtitle').textContent = `Signed in as ${memberId}`;
+    showScreen('events');
+    loadEvents();
+
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Sign in';
+  }
+}
+
+async function fetchProfile(memberId) {
+  // Get the member's profile to find their unit
+  const res = await fetch(`https://members.terrain.scouts.com.au/members/${memberId}`, {
+    headers: { 'Authorization': authToken }
+  });
+  if (res.ok) {
+    const data = await res.json();
+    // Find their primary unit
+    const unit = data.results?.find(r => r.status === 'active' && r.level === 'unit');
+    if (unit) unitId = unit.unit?.id;
+  }
+}
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+async function loadEvents() {
+  document.getElementById('events-loading').style.display = 'block';
+  document.getElementById('events-content').style.display = 'none';
+
+  try {
+    // Fetch events for this unit — last 60 days and next 30 days
+    const now = new Date();
+    const from = new Date(now - 60 * 86400000).toISOString().split('T')[0];
+    const to = new Date(now.getTime() + 30 * 86400000).toISOString().split('T')[0];
+
+    const res = await fetch(
+      `https://events.terrain.scouts.com.au/events?unit_id=${unitId}&start_date=${from}&end_date=${to}`,
+      { headers: { 'Authorization': authToken } }
+    );
+
+    if (!res.ok) throw new Error('Could not load events');
+    const data = await res.json();
+
+    const events = (data.results || [])
+      .filter(e => e.event_type?.type === 'unit' || e.event_type?.id === unitId)
+      .sort((a, b) => new Date(b.start_datetime) - new Date(a.start_datetime));
+
+    renderEvents(events);
+  } catch (e) {
+    document.getElementById('events-list').innerHTML =
+      `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+    document.getElementById('events-loading').style.display = 'none';
+    document.getElementById('events-content').style.display = 'block';
+  }
+}
+
+function renderEvents(events) {
+  const list = document.getElementById('events-list');
+
+  if (!events.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No meetings found in the last 60 days.</p></div>';
+  } else {
+    list.innerHTML = events.map(ev => {
+      const d = new Date(ev.start_datetime);
+      const day = d.getDate();
+      const mon = d.toLocaleString('en-AU', { month: 'short' });
+      const time = d.toLocaleString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const concluded = ev.status === 'concluded';
+      const hasAttendance = ev.attendance?.attendee_member_ids?.length > 0;
+
+      return `<div class="event-card" onclick="selectEvent(${JSON.stringify(ev).replace(/"/g, '&quot;')})">
+        <div class="event-date-badge">
+          <div class="day">${day}</div>
+          <div class="mon">${mon}</div>
+        </div>
+        <div class="event-info">
+          <h3>${ev.title || 'Meeting'}</h3>
+          <p>${time}${ev.location ? ' · ' + ev.location : ''}</p>
+          ${concluded ? `<span class="event-status ${hasAttendance ? 'done' : ''}">
+            ${hasAttendance ? '✓ Roll taken' : '⚠ Roll missing'}
+          </span>` : `<span class="event-status">Upcoming</span>`}
+        </div>
+        <div class="event-arrow">›</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('events-loading').style.display = 'none';
+  document.getElementById('events-content').style.display = 'block';
+}
+
+// ─── ROLL TAKING ─────────────────────────────────────────────────────────────
+async function selectEvent(ev) {
+  currentEvent = ev;
+  attendance = {};
+
+  // Pre-fill existing attendance
+  const existing = ev.attendance?.attendee_member_ids || [];
+  existing.forEach(id => attendance[id] = true);
+
+  // Set event header
+  const d = new Date(ev.start_datetime);
+  document.getElementById('roll-event-title').textContent = ev.title || 'Meeting';
+  document.getElementById('roll-event-date').textContent =
+    d.toLocaleString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  document.getElementById('roll-event-location').textContent = ev.location ? '📍 ' + ev.location : '';
+
+  showScreen('roll');
+  document.getElementById('member-list').innerHTML = '<div class="loading-state"><div class="spinner dark"></div><p>Loading members…</p></div>';
+
+  try {
+    await loadMembers();
+    renderMemberList();
+    updateCount();
+  } catch (e) {
+    document.getElementById('member-list').innerHTML =
+      `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function loadMembers() {
+  // Use the member-agenda endpoint we discovered
+  const eventId = currentEvent.id;
+  const res = await fetch(
+    `https://agenda.terrain.scouts.com.au/units/${unitId}/member-agenda`,
+    { headers: { 'Authorization': authToken } }
+  );
+
+  if (!res.ok) throw new Error('Could not load member list');
+  const data = await res.json();
+
+  // member-agenda returns members with their details
+  members = (data.members || data.results || [])
+    .filter(m => m.status === 'active' || !m.status)
+    .sort((a, b) => {
+      const aName = (a.last_name || a.name || '').toLowerCase();
+      const bName = (b.last_name || b.name || '').toLowerCase();
+      return aName.localeCompare(bName);
+    });
+}
+
+function renderMemberList() {
+  const list = document.getElementById('member-list');
+
+  if (!members.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No members found.</p></div>';
+    return;
+  }
+
+  list.innerHTML = members.map(m => {
+    const id = m.id || m.member_id;
+    const present = attendance[id] || false;
+    const firstName = m.first_name || (m.name || '').split(' ')[0] || '?';
+    const lastName = m.last_name || (m.name || '').split(' ').slice(1).join(' ') || '';
+    const initials = (firstName[0] || '') + (lastName[0] || '');
+    const patrol = m.patrol_name || m.patrol || '';
+
+    return `<div class="member-row ${present ? 'present' : ''}" 
+              id="member-${id}" 
+              onclick="toggleMember('${id}')">
+      <div class="member-avatar">${initials.toUpperCase()}</div>
+      <div style="flex:1; min-width:0">
+        <div class="member-name">${firstName} ${lastName}</div>
+        ${patrol ? `<div class="member-patrol">Patrol: ${patrol}</div>` : ''}
+      </div>
+      <div class="tick">✓</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMember(id) {
+  attendance[id] = !attendance[id];
+  const row = document.getElementById('member-${id}');
+
+  // Re-render just this row
+  const m = members.find(m => (m.id || m.member_id) === id);
+  if (!m) return;
+
+  const el = document.querySelector(`[id="member-${id}"]`);
+  if (el) {
+    if (attendance[id]) {
+      el.classList.add('present');
+    } else {
+      el.classList.remove('present');
+    }
+  }
+  updateCount();
+}
+
+function markAll(present) {
+  members.forEach(m => {
+    const id = m.id || m.member_id;
+    attendance[id] = present;
+  });
+  renderMemberList();
+  updateCount();
+}
+
+function updateCount() {
+  const presentCount = Object.values(attendance).filter(Boolean).length;
+  const total = members.length;
+  document.getElementById('att-count').textContent = presentCount;
+  document.getElementById('att-fraction').textContent = `of ${total} members`;
+}
+
+// ─── SAVE TO TERRAIN ─────────────────────────────────────────────────────────
+async function doSave() {
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Saving…';
+
+  try {
+    const presentIds = members
+      .map(m => m.id || m.member_id)
+      .filter(id => attendance[id]);
+
+    // Build the full event payload (PATCH requires the whole object)
+    const payload = {
+      ...currentEvent,
+      attendance: {
+        ...(currentEvent.attendance || {}),
+        attendee_member_ids: presentIds,
+        participant_member_ids: presentIds,
+        // Keep leader/assistant as-is
+        leader_member_ids: currentEvent.attendance?.leader_member_ids || [],
+        assistant_member_ids: currentEvent.attendance?.assistant_member_ids || [],
+      }
+    };
+
+    const res = await fetch(
+      `https://events.terrain.scouts.com.au/events/${currentEvent.id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': authToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Save failed (${res.status}). ${err}`);
+    }
+
+    // Update local event so back button shows correct status
+    currentEvent.attendance = payload.attendance;
+
+    // Show success
+    const d = new Date(currentEvent.start_datetime);
+    const presentCount = presentIds.length;
+    document.getElementById('success-detail').innerHTML = `
+      <div><span class="label">Event</span>${currentEvent.title}</div>
+      <div><span class="label">Date</span>${d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long' })}</div>
+      <div><span class="label">Present</span>${presentCount} of ${members.length} members</div>
+    `;
+    showScreen('success');
+
+  } catch (e) {
+    alert('Could not save: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Save to Terrain';
+  }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function doLogout() {
+  authToken = null;
+  unitId = null;
+  currentEvent = null;
+  members = [];
+  attendance = {};
+  document.getElementById('input-password').value = '';
+  document.getElementById('header-subtitle').textContent = 'Sign in to take the roll';
+  showScreen('login');
+}
+
+// Allow Enter key on login
+document.getElementById('input-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('input-username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('input-password').focus();
+});
+</script>
+</body>
+</html>
