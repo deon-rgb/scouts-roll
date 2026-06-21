@@ -1602,7 +1602,17 @@ function renderRollEvents() {
     list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No meetings found.</p></div>';
     return;
   }
-  list.innerHTML = state.events.map(ev => eventCardHTML(ev, false)).join('');
+  // Filter events to the selected unit (or show all if 'all' selected)
+  const uid = state.selectedUnitId;
+  const filtered = (!uid || uid === 'all')
+    ? state.events
+    : state.events.filter(ev => ev.unit_id === uid);
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No meetings for this unit.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(ev => eventCardHTML(ev, false)).join('');
 }
 
 function eventCardHTML(ev, compact) {
