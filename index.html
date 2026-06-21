@@ -646,6 +646,17 @@
 
 <!-- ROLL TAB -->
 <div id="screen-roll-list" class="screen">
+  <div style="padding: 0 0 12px 0;">
+    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px">Unit</label>
+    <select id="unit-selector" onchange="onUnitChange()" style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236B7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:16px;cursor:pointer;">
+      <option value="054bc5df-bb9d-4ef9-a041-1a22518c4d1a">🔵 Scouts</option>
+      <option value="6ed6a27f-e76e-49b7-ad20-d8143d37dbe3">🟠 Joeys</option>
+      <option value="a1fb7ab1-96d2-4b02-b3e8-fc0bed99142b">🟡 Cubs</option>
+      <option value="c5bfe4a0-9734-4b73-b544-99bb0bd42716">🟣 Venturers</option>
+      <option value="6fe441ab-1382-406a-bbf8-aeb6a03b86c1">🟤 Rovers</option>
+      <option value="all">👥 All sections</option>
+    </select>
+  </div>
   <div class="section-label">Select a meeting</div>
   <div id="roll-events-list">
     <div class="loading-block"><div class="spinner dark"></div><p>Loading events…</p></div>
@@ -1108,9 +1119,16 @@ async function sendMessage() {
       await loadMessages(chatState.currentChannel.id);
     } else {
       input.value = content; // restore if failed
+      let errMsg = `Send failed (${res.status})`;
+      try {
+        const errData = await res.json();
+        if (errData.error) errMsg = errData.error;
+      } catch(_) {}
+      showToast(errMsg, 'error');
     }
   } catch(e) {
     input.value = content;
+    showToast('No connection – message not sent', 'error');
   } finally {
     btn.disabled = false;
     input.focus();
@@ -1250,6 +1268,21 @@ async function createChannel() {
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  let el = document.getElementById('app-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-toast';
+    el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;color:#fff;z-index:9999;max-width:90vw;text-align:center;pointer-events:none;transition:opacity 0.3s;opacity:0;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = type === 'error' ? '#E74C3C' : type === 'success' ? '#27AE60' : '#00348D';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -1413,6 +1446,7 @@ let state = {
   token:    null,
   memberId: null,
   unitId:   null,
+  selectedUnitId: null,   // currently viewed unit in roll tab
   role:     null,
   name:     null,
   events:   [],
@@ -1452,6 +1486,7 @@ async function doLogin() {
     state.token           = data.token;
     state.memberId        = data.member_id;
     state.unitId          = data.unit_id;
+    state.selectedUnitId  = data.unit_id;  // default to own unit
     state.role            = data.role;
     state.name            = data.name || data.member_id; // comes from members API now
     state.terrainMemberId = data.terrain_member_id;
@@ -1459,7 +1494,8 @@ async function doLogin() {
     // Save session
     localStorage.setItem('scouts_session', JSON.stringify({
       token: state.token, memberId: state.memberId,
-      unitId: state.unitId, role: state.role, name: state.name,
+      unitId: state.unitId, selectedUnitId: state.selectedUnitId,
+      role: state.role, name: state.name,
       terrainMemberId: state.terrainMemberId,
     }));
 
@@ -1501,8 +1537,19 @@ function enterApp() {
   document.getElementById('profile-unit-id').textContent   = 'Unit: ' + state.unitId;
   document.getElementById('home-name').textContent = (state.name && !state.name.startsWith('vic-')) ? state.name.split(' ')[0] : 'Leader';
 
+  // Sync unit selector to logged-in user's unit
+  const unitSel = document.getElementById('unit-selector');
+  if (unitSel && state.selectedUnitId) unitSel.value = state.selectedUnitId;
+
   showTab('home');
   loadData();
+}
+
+// ── UNIT SELECTOR ─────────────────────────────────────────────
+function onUnitChange() {
+  const sel = document.getElementById('unit-selector');
+  state.selectedUnitId = sel.value;
+  renderRollEvents(); // re-render events filtered for this unit
 }
 
 // ── DATA LOADING ──────────────────────────────────────────────
@@ -1617,8 +1664,11 @@ async function selectEvent(eventId) {
   state.rollEditMode = !isConcluded; // new events start in edit mode, concluded in view mode
 
   try {
+    const unitParam = state.selectedUnitId && state.selectedUnitId !== 'all'
+      ? `?unit_id=${encodeURIComponent(state.selectedUnitId)}`
+      : '';
     const [membersRes, attRes] = await Promise.all([
-      fetch(`${API}/members/${eventId}`, { headers: { Authorization: state.token } }),
+      fetch(`${API}/members/${eventId}${unitParam}`, { headers: { Authorization: state.token } }),
       fetch(`${API}/attendance/${eventId}`, { headers: { Authorization: state.token } }),
     ]);
 
@@ -1885,7 +1935,7 @@ async function doReauth() {
 
 function doLogout() {
   localStorage.removeItem('scouts_session');
-  state = { token:null, memberId:null, unitId:null, role:null, name:null, events:[], members:[], attendance:{}, currentEvent:null };
+  state = { token:null, memberId:null, unitId:null, selectedUnitId:null, role:null, name:null, events:[], members:[], attendance:{}, currentEvent:null };
   document.getElementById('app-header').style.display = 'none';
   document.getElementById('bottom-nav').style.display = 'none';
   document.getElementById('input-password').value = '';
@@ -1901,6 +1951,7 @@ function restoreSession() {
       state.token           = s.token;
       state.memberId        = s.memberId;
       state.unitId          = s.unitId;
+      state.selectedUnitId  = s.selectedUnitId || s.unitId;
       state.role            = s.role;
       state.name            = s.name;
       state.terrainMemberId = s.terrainMemberId || null;
