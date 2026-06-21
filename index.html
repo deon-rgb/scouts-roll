@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#00348D">
+<link rel="manifest" href="/manifest.json">
+<script>
+  // Register service worker for offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+  // Handle URL shortcuts
+  const urlParams = new URLSearchParams(window.location.search);
+  const startTab  = urlParams.get('tab');
+</script>
+<title>Scouts | Princes Park</title>
+<style>
+  :root {
+    --navy:        #00348D;
+    --navy-dark:   #002270;
+    --navy-light:  #1a4fa8;
+    --gold:        #F4A800;
+    --gold-light:  #FFD166;
+    --green:       #27AE60;
+    --green-light: #2ECC71;
+    --red:         #E74C3C;
+    --bg:          #F0F4FF;
+    --surface:     #FFFFFF;
+    --border:      #D8E2FF;
+    --text:        #0D1B3E;
+    --text-muted:  #6B7280;
+    --radius:      16px;
+    --radius-sm:   10px;
+    --shadow:      0 2px 16px rgba(0,52,141,0.08);
+    --shadow-lg:   0 8px 32px rgba(0,52,141,0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  .app-header {
+    background: var(--navy);
+    color: white;
+    padding: env(safe-area-inset-top, 0) 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 16px;
+  }
+  .header-left h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    line-height: 1;
+  }
+  .header-left p {
+    font-size: 12px;
+    opacity: 0.65;
+    margin-top: 3px;
+  }
+  .header-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ── NAV ────────────────────────────────────────────────── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    z-index: 200;
+    box-shadow: 0 -4px 24px rgba(0,52,141,0.08);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    gap: 4px;
+    transition: color 0.15s;
+    user-select: none;
+  }
+  .nav-item.active { color: var(--navy); }
+  .nav-icon { font-size: 22px; line-height: 1; }
+
+  /* ── SCREENS ────────────────────────────────────────────── */
+  .screen { display: none; padding: 16px 16px 100px; max-width: 560px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* ── LOGIN ──────────────────────────────────────────────── */
+  #screen-login {
+    display: flex; flex-direction: column;
+    min-height: 100dvh;
+    align-items: center; justify-content: center;
+    padding: 32px 24px;
+    background: var(--navy);
+    max-width: 100%;
+  }
+  .login-logo {
+    font-size: 64px; margin-bottom: 8px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  }
+  .login-title {
+    color: white; font-size: 26px; font-weight: 800;
+    letter-spacing: -0.5px; margin-bottom: 4px; text-align: center;
+  }
+  .login-sub {
+    color: rgba(255,255,255,0.6); font-size: 14px;
+    margin-bottom: 40px; text-align: center;
+  }
+  .login-card {
+    background: white; border-radius: 20px;
+    padding: 28px 24px; width: 100%; max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-card h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .field input { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.15s; }
+  .field input:focus { border-color: var(--navy); background: white; }
+  .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+  .btn { width: 100%; padding: 15px; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger { background: #FEE2E2; color: var(--red); margin-top: 8px; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--navy); font-weight: 600; }
+
+  .error-msg { background: #FEE2E2; border: 1px solid #FECACA; color: #DC2626; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; display: none; }
+  .error-msg.show { display: block; }
+
+  /* ── CARDS ──────────────────────────────────────────────── */
+  .card { background: var(--surface); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+  /* ── SECTION LABEL ──────────────────────────────────────── */
+  .section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 10px; }
+
+  /* ── HERO CARD ──────────────────────────────────────────── */
+  .hero-card {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    color: white;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::after {
+    content: '⚜️';
+    position: absolute;
+    right: 16px; bottom: -4px;
+    font-size: 72px;
+    opacity: 0.1;
+  }
+  .hero-greeting { font-size: 13px; opacity: 0.7; margin-bottom: 4px; }
+  .hero-name { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 16px; }
+  .hero-stats { display: flex; gap: 20px; }
+  .hero-stat .num { font-size: 28px; font-weight: 800; line-height: 1; }
+  .hero-stat .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  /* ── EVENT CARDS ────────────────────────────────────────── */
+  .event-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .event-card:active { transform: scale(0.98); }
+  .event-card.roll-missing { border-color: #FEF3C7; }
+  .event-date {
+    background: var(--navy);
+    color: white;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    min-width: 46px;
+    flex-shrink: 0;
+  }
+  .event-date .day { font-size: 20px; font-weight: 800; line-height: 1; }
+  .event-date .mon { font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.5px; }
+  .event-info { flex: 1; min-width: 0; }
+  .event-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .event-meta { font-size: 12px; color: var(--text-muted); }
+  .event-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; display: inline-block; margin-top: 4px; }
+  .badge-missing { background: #FEF3C7; color: #B45309; }
+  .badge-done    { background: #D1FAE5; color: #065F46; }
+  .badge-future  { background: #EFF6FF; color: #1D4ED8; }
+  .badge-grey    { background: #F3F4F6; color: #6B7280; }
+
+  /* ── ROLL SCREEN ────────────────────────────────────────── */
+  .roll-event-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .roll-event-header h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .roll-event-header p  { font-size: 13px; opacity: 0.75; }
+
+  .att-bar {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .att-num { font-size: 40px; font-weight: 800; color: var(--navy); line-height: 1; }
+  .att-lbl { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .att-total { font-size: 15px; color: var(--text-muted); }
+
+  .quick-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .quick-btn { flex: 1; padding: 11px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer; text-align: center; }
+  .quick-btn:active { background: var(--bg); }
+
+  .member-row {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    border: 2px solid transparent;
+    margin-bottom: 8px;
+    transition: border-color 0.1s, background 0.1s;
+    user-select: none;
+  }
+  .member-row.present { border-color: var(--green-light); background: #F0FFF6; }
+  .member-row:active  { transform: scale(0.99); }
+
+  .member-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: white;
+    font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.1s;
+  }
+  .member-row.present .member-avatar { background: var(--green); }
+  .member-name { flex: 1; font-size: 16px; font-weight: 600; }
+  .member-sub  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  .check-circle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.1s;
+    color: transparent;
+  }
+  .member-row.present .check-circle { background: var(--green); border-color: var(--green); color: white; }
+
+  /* ── SAVE BAR ───────────────────────────────────────────── */
+  .save-bar {
+    position: fixed;
+    bottom: 65px; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 12px;
+    display: flex; gap: 10px;
+    z-index: 150;
+    box-shadow: 0 -4px 24px rgba(0,52,141,0.10);
+  }
+  .save-bar .btn { flex: 1; padding: 15px; }
+  .btn-back {
+    background: var(--bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    width: 50px; min-width: 50px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+
+  /* ── SUCCESS ────────────────────────────────────────────── */
+  .success-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+  }
+  .success-icon { font-size: 64px; margin-bottom: 16px; }
+  .success-card h2 { font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .success-card p  { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+  .success-detail {
+    background: var(--bg); border-radius: var(--radius-sm);
+    padding: 14px 16px; margin: 20px 0; text-align: left;
+  }
+  .success-detail div { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
+  .success-detail div:last-child { margin-bottom: 0; }
+  .success-detail .lbl { font-weight: 700; color: var(--navy); min-width: 70px; }
+
+  /* ── LOADING ────────────────────────────────────────────── */
+  .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  .spinner.dark { border-color: rgba(0,52,141,0.15); border-top-color: var(--navy); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-block { text-align: center; padding: 48px 20px; }
+  .loading-block p { margin-top: 14px; color: var(--text-muted); font-size: 15px; }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; line-height: 1.5; }
+
+  /* ── PROFILE ────────────────────────────────────────────── */
+  .profile-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    color: white;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .profile-avatar-lg {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 3px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800;
+    margin: 0 auto 12px;
+  }
+  .profile-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .profile-role { font-size: 13px; opacity: 0.7; }
+  .profile-unit { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+
+  /* ── CHAT ──────────────────────────────────────────────────── */
+  .channel-card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 8px;
+    box-shadow: var(--shadow); cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    border: 2px solid transparent; transition: border-color 0.15s;
+  }
+  .channel-card:active { transform: scale(0.98); }
+  .channel-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--navy); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .channel-icon.patrol  { background: #8B5CF6; }
+  .channel-icon.project { background: #F59E0B; }
+  .channel-icon.council { background: #10B981; }
+  .channel-icon.direct  { background: #3B82F6; }
+  .channel-icon.leaders { background: #EF4444; }
+  .channel-info { flex: 1; min-width: 0; }
+  .channel-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .channel-preview { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .channel-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .channel-badge {
+    background: var(--navy); color: white;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    padding: 2px 7px; flex-shrink: 0;
+  }
+  .channel-tag {
+    font-size: 10px; font-weight: 700; padding: 2px 6px;
+    border-radius: 20px; display: inline-block; margin-top: 3px;
+  }
+  .tag-finite   { background: #FEF3C7; color: #B45309; }
+  .tag-ongoing  { background: #D1FAE5; color: #065F46; }
+  .tag-flag     { background: #FEE2E2; color: #DC2626; }
+
+  /* Message screen */
+  .chat-header {
+    background: var(--navy); color: white;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .chat-header h2 { font-size: 16px; font-weight: 700; flex: 1; }
+  .chat-header p  { font-size: 12px; opacity: 0.7; }
+  .chat-back { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 0 4px; }
+
+  .messages-container {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    padding-bottom: 80px;
+  }
+
+  .message-bubble {
+    max-width: 80%; display: flex; flex-direction: column;
+  }
+  .message-bubble.mine   { align-self: flex-end; align-items: flex-end; }
+  .message-bubble.theirs { align-self: flex-start; align-items: flex-start; }
+
+  .bubble-sender {
+    font-size: 11px; color: var(--text-muted);
+    margin-bottom: 3px; font-weight: 600;
+  }
+  .bubble-content {
+    padding: 10px 14px; border-radius: 16px;
+    font-size: 15px; line-height: 1.4; word-break: break-word;
+  }
+  .message-bubble.mine   .bubble-content { background: var(--navy); color: white; border-bottom-right-radius: 4px; }
+  .message-bubble.theirs .bubble-content { background: var(--surface); color: var(--text); border-bottom-left-radius: 4px; box-shadow: var(--shadow); }
+  .message-bubble.leader .bubble-content { background: #EFF6FF; border-left: 3px solid var(--navy); }
+
+  .bubble-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+  .bubble-flag { font-size: 10px; color: #DC2626; margin-top: 2px; }
+
+  .message-input-bar {
+    position: fixed; bottom: 65px; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--border);
+    padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end;
+    z-index: 150;
+  }
+  .message-input {
+    flex: 1; padding: 10px 14px;
+    border: 1.5px solid var(--border); border-radius: 20px;
+    font-size: 15px; outline: none; resize: none;
+    max-height: 120px; line-height: 1.4;
+    font-family: inherit;
+  }
+  .message-input:focus { border-color: var(--navy); }
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--navy); color: white; border: none;
+    font-size: 18px; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+  }
+  .send-btn:active { transform: scale(0.9); }
+  .send-btn:disabled { opacity: 0.4; }
+
+  .chat-screen {
+    display: none; flex-direction: column;
+    height: calc(100dvh - 65px); overflow: hidden;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 65px;
+    background: var(--bg); z-index: 100;
+  }
+  .chat-screen.active { display: flex; }
+
+  /* New channel modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 300;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 24px; width: 100%; max-width: 560px;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .modal-sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+  .modal-close {
+    float: right; background: none; border: none;
+    font-size: 24px; cursor: pointer; color: var(--text-muted);
+    margin-top: -4px;
+  }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .type-btn {
+    padding: 14px 10px; border: 2px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--surface);
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .type-btn.selected { border-color: var(--navy); background: #EFF6FF; }
+  .type-btn .type-icon { font-size: 24px; margin-bottom: 4px; }
+  .type-btn .type-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .type-btn .type-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Flags badge */
+  .flag-alert {
+    background: #FEE2E2; border: 1px solid #FECACA;
+    border-radius: var(--radius); padding: 14px;
+    margin-bottom: 10px; cursor: pointer;
+  }
+  .flag-alert h4 { font-size: 14px; font-weight: 700; color: #DC2626; margin-bottom: 4px; }
+  .flag-alert p  { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .flag-alert .flag-meta { font-size: 11px; color: var(--text-muted); }
+
+  /* ── BADGE DASHBOARD ────────────────────────────────────── */
+  .milestone-card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .milestone-card h3 { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 12px; }
+  .progress-bar-outer {
+    background: var(--bg); border-radius: 20px; height: 10px;
+    margin: 8px 0 4px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; border-radius: 20px;
+    background: linear-gradient(90deg, var(--navy), var(--navy-light));
+    transition: width 0.5s ease;
+  }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .oas-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 12px;
+  }
+  .oas-stream {
+    background: var(--surface); border-radius: var(--radius-sm);
+    padding: 14px; box-shadow: var(--shadow);
+  }
+  .oas-stream-name { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .oas-stage-dots { display: flex; gap: 4px; flex-wrap: wrap; }
+  .stage-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+  }
+  .stage-dot.awarded    { background: var(--green); color: white; }
+  .stage-dot.pending    { background: #FEF3C7; color: #B45309; }
+  .stage-dot.empty      { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+  .next-badge-card {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    border-radius: var(--radius); padding: 18px; color: white; margin-bottom: 16px;
+  }
+  .next-badge-card h3 { font-size: 13px; opacity: 0.9; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .next-badge-card p  { font-size: 17px; font-weight: 700; line-height: 1.3; }
+  .next-badge-card .next-actions { margin-top: 12px; font-size: 13px; opacity: 0.9; }
+  .challenge-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .challenge-row:last-child { border-bottom: none; }
+  .challenge-icon { font-size: 24px; flex-shrink: 0; }
+  .challenge-info { flex: 1; }
+  .challenge-name { font-size: 14px; font-weight: 600; }
+  .challenge-count { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .member-select-row {
+    background: var(--surface); border-radius: var(--radius-sm);
+    padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; box-shadow: var(--shadow);
+  }
+  .member-select-row:active { transform: scale(0.98); }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER (hidden on login) -->
+<div class="app-header" id="app-header" style="display:none">
+  <div class="header-inner">
+    <div class="header-left">
+      <h1>⚜️ Princes Park Scouts</h1>
+      <p id="header-role">Loading…</p>
+    </div>
+    <div class="header-avatar" id="header-avatar" onclick="showTab('profile')">?</div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL — shown over app when session needed -->
+<div id="login-modal" class="modal-overlay show" style="align-items:center;background:rgba(0,30,100,0.95)">
+  <div style="width:100%;max-width:420px;padding:32px 24px;display:flex;flex-direction:column;align-items:center">
+    <div style="font-size:64px;margin-bottom:8px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))">⚜️</div>
+    <div style="color:white;font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;text-align:center">Princes Park Scouts</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:32px;text-align:center" id="login-subtitle">Sign in with your Terrain account</div>
+    <div style="background:white;border-radius:20px;padding:28px 24px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <h2 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Welcome back</h2>
+      <div class="error-msg" id="login-error"></div>
+      <div class="field">
+        <label>Member ID</label>
+        <input type="text" id="input-username" placeholder="vic-8134812" autocapitalize="none" autocomplete="username" spellcheck="false" />
+        <div class="hint">Format: vic-memberid</div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="input-password" placeholder="Your Terrain password" autocomplete="current-password" />
+      </div>
+      <button class="btn btn-primary" id="btn-login" onclick="doLogin()">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME TAB -->
+<div id="screen-home" class="screen">
+  <div class="hero-card">
+    <div class="hero-greeting">Good evening 👋</div>
+    <div class="hero-name" id="home-name">Loading…</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num" id="home-events-count">–</div>
+        <div class="lbl">events this term</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num" id="home-members-count">–</div>
+        <div class="lbl">members</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Recent meetings</div>
+  <div id="home-events-list">
+    <div class="loading-block"><div class="spinner dark"></div><p>Loading…</p></div>
+  </div>
+</div>
+
+<!-- ROLL TAB -->
+<div id="screen-roll-list" class="screen">
+  <div class="section-label">Select a meeting</div>
+  <div id="roll-events-list">
+    <div class="loading-block"><div class="spinner dark"></div><p>Loading events…</p></div>
+  </div>
+</div>
+
+<!-- ROLL TAKING -->
+<div id="screen-roll-take" class="screen">
+  <div class="roll-event-header">
+    <h2 id="roll-title">Meeting</h2>
+    <p id="roll-date"></p>
+    <p id="roll-location" style="margin-top:3px"></p>
+  </div>
+  <div class="att-bar">
+    <div>
+      <div class="att-num" id="att-num">0</div>
+      <div class="att-lbl">present tonight</div>
+    </div>
+    <div class="att-total" id="att-total">of 0</div>
+  </div>
+  <div class="quick-row">
+    <button class="quick-btn" onclick="markAll(true)">✓ All present</button>
+    <button class="quick-btn" onclick="markAll(false)">✗ Clear all</button>
+  </div>
+  <div id="member-list"></div>
+  <div style="height:160px"></div>
+  <div class="save-bar">
+    <button class="btn-back" onclick="showTab('roll')">←</button>
+    <button class="btn btn-primary" id="btn-save-roll" onclick="doSaveRoll()">Save to Terrain</button>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="screen-success" class="screen">
+  <div class="success-card">
+    <div class="success-icon">🎉</div>
+    <h2>Roll saved!</h2>
+    <p>Attendance queued to sync to Terrain tonight.</p>
+    <div class="success-detail" id="success-detail"></div>
+    <button class="btn btn-primary" onclick="showTab('roll')" style="margin-top:4px">Back to events</button>
+  </div>
+</div>
+
+<!-- PROFILE TAB -->
+<div id="screen-profile" class="screen">
+  <div class="profile-header">
+    <div class="profile-avatar-lg" id="profile-avatar-lg">?</div>
+    <div class="profile-name" id="profile-name">–</div>
+    <div class="profile-role" id="profile-role">–</div>
+    <div class="profile-unit">Princes Park Scout Group</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">Account</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px" id="profile-member-id">–</div>
+    <div style="font-size:14px;color:var(--text-muted)" id="profile-unit-id">–</div>
+  </div>
+  <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Sign out</button>
+</div>
+
+<!-- BOTTOM NAV (hidden on login) -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none">
+  <div class="nav-item active" id="nav-home" onclick="showTab('home')">
+    <div class="nav-icon">🏠</div>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" id="nav-roll" onclick="showTab('roll')">
+    <div class="nav-icon">✅</div>
+    <span>Roll</span>
+  </div>
+  <div class="nav-item" id="nav-badges" onclick="showTab('badges')">
+    <div class="nav-icon">🏅</div>
+    <span>Badges</span>
+  </div>
+  <div class="nav-item" id="nav-chat" onclick="showTab('chat')">
+    <div class="nav-icon">💬</div>
+    <span>Chat</span>
+    <span id="chat-badge" style="display:none;position:absolute;top:6px;right:calc(50% - 22px);background:#E74C3C;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700"></span>
+  </div>
+  <div class="nav-item" id="nav-profile" onclick="showTab('profile')">
+    <div class="nav-icon">👤</div>
+    <span>Profile</span>
+  </div>
+</nav>
+
+
+
+
+
+<!-- BADGE DASHBOARD SCREEN -->
+<div id="screen-badges" class="screen">
+  <div class="hero-card" style="margin-bottom:16px">
+    <div class="hero-greeting">Badge Progress</div>
+    <div class="hero-name" id="badge-member-name">Loading…</div>
+    <div style="font-size:13px;opacity:0.8;margin-top:4px" id="badge-section"></div>
+  </div>
+
+  <div id="badge-content">
+    <div class="loading-block"><div class="spinner dark"></div><p>Loading badge progress…</p></div>
+  </div>
+</div>
+
+<!-- MEMBER LIST FOR BADGES (leader view) -->
+<div id="screen-badge-members" class="screen">
+  <div class="section-label">Select a member</div>
+  <div id="badge-member-list"></div>
+</div>
+
+<!-- CHAT CHANNEL LIST -->
+<div id="screen-chat" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div class="section-label" style="margin:0">Messages</div>
+    <button onclick="showNewChannelModal()"
+      style="background:var(--navy);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">
+      + New
+    </button>
+  </div>
+
+  <!-- Flags alert for supervisors -->
+  <div id="flags-section" style="display:none">
+    <div class="section-label">⚠️ Flagged messages</div>
+    <div id="flags-list"></div>
+  </div>
+
+  <div id="channels-list">
+    <div class="loading-block"><div class="spinner dark"></div><p>Loading…</p></div>
+  </div>
+</div>
+
+<!-- CHAT MESSAGE VIEW -->
+<div id="screen-chat-view" class="chat-screen">
+  <div class="chat-header">
+    <button class="chat-back" onclick="closeChatView()">←</button>
+    <div style="flex:1;min-width:0">
+      <h2 id="chat-view-title">Channel</h2>
+      <p id="chat-view-meta"></p>
+    </div>
+    <div id="chat-view-badges"></div>
+  </div>
+  <div class="messages-container" id="messages-container">
+    <div class="loading-block"><div class="spinner dark"></div><p>Loading messages…</p></div>
+  </div>
+  <div class="message-input-bar">
+    <textarea class="message-input" id="message-input"
+      placeholder="Type a message…" rows="1"
+      oninput="autoResize(this)"
+      onkeydown="handleMessageKey(event)"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+  </div>
+</div>
+
+<!-- NEW CHANNEL MODAL -->
+<div class="modal-overlay" id="new-channel-modal">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeNewChannelModal()">×</button>
+    <h3>New conversation</h3>
+
+    <div class="section-label">Type</div>
+    <div class="type-grid" id="channel-type-grid">
+      <div class="type-btn selected" onclick="selectChannelType('unit')" id="type-unit">
+        <div class="type-icon">📢</div>
+        <div class="type-name">Unit announcement</div>
+        <div class="type-desc">Everyone in the unit</div>
+      </div>
+      <div class="type-btn" onclick="selectChannelType('patrol')" id="type-patrol">
+        <div class="type-icon">🏕️</div>
+        <div class="type-name">Patrol chat</div>
+        <div class="type-desc">One patrol group</div>
+      </div>
+      <div class="type-btn" onclick="selectChannelType('project')" id="type-project">
+        <div class="type-icon">⚡</div>
+        <div class="type-name">Project group</div>
+        <div class="type-desc">Temporary — closes when done</div>
+      </div>
+      <div class="type-btn" onclick="selectChannelType('council')" id="type-council">
+        <div class="type-icon">⭐</div>
+        <div class="type-name">Unit council</div>
+        <div class="type-desc">Youth leadership group</div>
+      </div>
+      <div class="type-btn" onclick="selectChannelType('direct')" id="type-direct">
+        <div class="type-icon">💬</div>
+        <div class="type-name">Direct message</div>
+        <div class="type-desc">Supervised — leaders can see</div>
+      </div>
+      <div class="type-btn" onclick="selectChannelType('leaders')" id="type-leaders" style="display:none">
+        <div class="type-icon">🔒</div>
+        <div class="type-name">Leaders only</div>
+        <div class="type-desc">Private leader channel</div>
+      </div>
+    </div>
+
+    <div id="channel-name-field" class="field">
+      <label>Channel name</label>
+      <input type="text" id="new-channel-name" placeholder="e.g. Red Patrol chat" />
+    </div>
+
+    <div class="field" id="members-field">
+      <label>Add members</label>
+      <div id="member-picker" style="max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;padding:8px"></div>
+    </div>
+
+    <div id="finite-field" class="field" style="display:none">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="is-finite" style="width:18px;height:18px" />
+        <span>Close this group when the project is done</span>
+      </label>
+    </div>
+
+    <div style="background:#EFF6FF;border-radius:10px;padding:12px;font-size:13px;color:#1D4ED8;margin-bottom:16px">
+      ⚠️ All messages are visible to group supervisors for child safety purposes (Two Present Leadership).
+    </div>
+
+    <button class="btn btn-primary" onclick="createChannel()">Create</button>
+  </div>
+</div>
+
+
+<!-- REAUTH MODAL - shown when token expires -->
+<div class="modal-overlay" id="reauth-modal">
+  <div class="modal-sheet" style="max-height:none">
+    <h3 style="margin-bottom:8px">Session expired</h3>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">
+      Please enter your password to continue. Your member ID is saved.
+    </p>
+    <div class="error-msg" id="reauth-error"></div>
+    <div class="field">
+      <label>Member ID</label>
+      <input type="text" id="reauth-username" readonly
+        style="background:#f0f0f0;color:var(--text-muted)" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="reauth-password" placeholder="Your Terrain password"
+        autocomplete="current-password" />
+    </div>
+    <button class="btn btn-primary" id="reauth-btn" onclick="doReauth()">Sign in</button>
+    <button class="btn btn-outline" onclick="doLogout()" style="margin-top:8px">
+      Sign out completely
+    </button>
+  </div>
+</div>
+
+
+
+<script>
+
+// ── CONFIG ────────────────────────────────────────────────────
+const API = 'https://backend.scouts-app-deon.workers.dev';
+
+
+
+// ── CHAT STATE ────────────────────────────────────────────────
+let chatState = {
+  channels: [],
+  currentChannel: null,
+  messages: [],
+  channelMembers: [],
+  selectedType: 'unit',
+  selectedMemberIds: [],
+  pollingInterval: null,
+};
+
+// ── LOAD CHANNELS ─────────────────────────────────────────────
+async function loadChannels() {
+  const list = document.getElementById('channels-list');
+  try {
+    const res  = await fetch(`${API}/chat/channels`, {
+      headers: { Authorization: state.token }
+    });
+
+    if (res.status === 401) { handleTokenExpiry(); return; }
+
+    if (!res.ok) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Could not load messages (${res.status}).<br>Try signing out and back in.</p></div>`;
+      return;
+    }
+
+    const data = await res.json();
+    chatState.channels = data.results || [];
+    renderChannels();
+    loadFlags();
+  } catch(e) {
+    console.error('loadChannels:', e);
+    list.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Could not load messages.<br>${e.message}</p></div>`;
+  }
+}
+
+function renderChannels() {
+  const list = document.getElementById('channels-list');
+  if (!chatState.channels.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No conversations yet.<br>Tap + New to start one.</p></div>';
+    return;
+  }
+
+  const icons = { unit:'📢', patrol:'🏕️', project:'⚡', council:'⭐', direct:'💬', leaders:'🔒' };
+
+  list.innerHTML = chatState.channels.map(ch => {
+    const icon     = icons[ch.type] || '💬';
+    const tag      = ch.is_finite
+      ? '<span class="channel-tag tag-finite">Project</span>'
+      : '<span class="channel-tag tag-ongoing">Ongoing</span>';
+    const lastMsg  = ch.last_message ? ch.last_message.slice(0, 60) + (ch.last_message.length > 60 ? '…' : '') : 'No messages yet';
+    const lastTime = ch.last_message_at ? formatTime(ch.last_message_at) : '';
+    const flagBadge = ch.unread_flags > 0 ? `<span style="color:#DC2626;font-size:12px">⚠️ ${ch.unread_flags}</span>` : '';
+
+    return `<div class="channel-card" onclick="openChannel('${ch.id}')">
+      <div class="channel-icon ${ch.type}">${icon}</div>
+      <div class="channel-info">
+        <div class="channel-name">${ch.name} ${flagBadge}</div>
+        <div class="channel-preview">${lastMsg}</div>
+        <div class="channel-meta">${tag} ${lastTime ? '· ' + lastTime : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── FLAGS (supervisors only) ──────────────────────────────────
+async function loadFlags() {
+  if (state.role !== 'leader') return;
+  try {
+    const res  = await fetch(`${API}/chat/flags`, {
+      headers: { Authorization: state.token }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const flags = data.results || [];
+
+    const section = document.getElementById('flags-section');
+    const list    = document.getElementById('flags-list');
+
+    if (!flags.length) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    list.innerHTML = flags.map(f => `
+      <div class="flag-alert" onclick="reviewFlag(${f.id}, '${f.channel_id}')">
+        <h4>⚠️ "${f.keyword}" — ${f.severity.toUpperCase()}</h4>
+        <p>${f.sender_name}: "${f.content}"</p>
+        <div class="flag-meta">${f.channel_name} · ${formatTime(f.created_at)} · Tap to review</div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function reviewFlag(flagId, channelId) {
+  await fetch(`${API}/chat/flags/${flagId}/review`, {
+    method: 'POST',
+    headers: { Authorization: state.token }
+  });
+  openChannel(channelId);
+}
+
+// ── OPEN CHANNEL ──────────────────────────────────────────────
+async function openChannel(channelId) {
+  chatState.currentChannel = chatState.channels.find(c => c.id === channelId);
+
+  // Show chat screen
+  document.getElementById('screen-chat-view').classList.add('active');
+
+  // Set header
+  document.getElementById('chat-view-title').textContent = chatState.currentChannel?.name || 'Chat';
+
+  // Load messages
+  await loadMessages(channelId);
+
+  // Start polling for new messages every 10 seconds
+  if (chatState.pollingInterval) clearInterval(chatState.pollingInterval);
+  chatState.pollingInterval = setInterval(() => loadMessages(channelId), 10000);
+}
+
+function closeChatView() {
+  document.getElementById('screen-chat-view').classList.remove('active');
+  if (chatState.pollingInterval) {
+    clearInterval(chatState.pollingInterval);
+    chatState.pollingInterval = null;
+  }
+  loadChannels(); // Refresh channel list
+}
+
+// ── LOAD MESSAGES ─────────────────────────────────────────────
+async function loadMessages(channelId) {
+  try {
+    const res  = await fetch(`${API}/chat/channels/${channelId}/messages`, {
+      headers: { Authorization: state.token }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    chatState.messages       = data.messages || [];
+    chatState.channelMembers = data.members  || [];
+
+    const channel = data.channel;
+    const meta    = `${chatState.channelMembers.length} members`;
+    document.getElementById('chat-view-meta').textContent = meta;
+
+    // Archive button for finite channels (leaders only)
+    const badges = document.getElementById('chat-view-badges');
+    if (state.role === 'leader' && channel?.is_finite && !channel?.is_archived) {
+      badges.innerHTML = `<button onclick="archiveChannel('${channelId}')"
+        style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer">
+        Archive
+      </button>`;
+    } else {
+      badges.innerHTML = '';
+    }
+
+    renderMessages();
+  } catch(e) { console.error('loadMessages:', e); }
+}
+
+function renderMessages() {
+  const container = document.getElementById('messages-container');
+  const myId      = state.terrainMemberId;
+
+  if (!chatState.messages.length) {
+    container.innerHTML = '<div class="empty-state" style="padding-top:60px"><div class="icon">💬</div><p>No messages yet.<br>Say hello!</p></div>';
+    return;
+  }
+
+  const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+  container.innerHTML = chatState.messages.map(msg => {
+    const isMine   = msg.sender_id === myId;
+    const isLeader = msg.sender_role === 'leader';
+    const classes  = `message-bubble ${isMine ? 'mine' : isLeader ? 'theirs leader' : 'theirs'}`;
+    const flagNote = msg.is_flagged && state.role === 'leader'
+      ? `<div class="bubble-flag">⚠️ Flagged: ${msg.flag_reason}</div>` : '';
+
+    return `<div class="${classes}">
+      ${!isMine ? `<div class="bubble-sender">${msg.sender_name}${isLeader ? ' · Leader' : ''}</div>` : ''}
+      <div class="bubble-content">${escapeHtml(msg.content)}</div>
+      <div class="bubble-time">${formatTime(msg.sent_at)}</div>
+      ${flagNote}
+    </div>`;
+  }).join('');
+
+  // Scroll to bottom if we were at bottom
+  if (wasAtBottom) {
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// ── SEND MESSAGE ──────────────────────────────────────────────
+async function sendMessage() {
+  const input   = document.getElementById('message-input');
+  const content = input.value.trim();
+  if (!content || !chatState.currentChannel) return;
+
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  input.value  = '';
+  autoResize(input);
+
+  try {
+    const res = await fetch(`${API}/chat/channels/${chatState.currentChannel.id}/messages`, {
+      method:  'POST',
+      headers: { Authorization: state.token, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ content }),
+    });
+
+    if (res.ok) {
+      await loadMessages(chatState.currentChannel.id);
+    } else {
+      input.value = content; // restore if failed
+    }
+  } catch(e) {
+    input.value = content;
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function handleMessageKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── ARCHIVE CHANNEL ───────────────────────────────────────────
+async function archiveChannel(channelId) {
+  if (!confirm('Archive this channel? Members will no longer be able to send messages.')) return;
+  await fetch(`${API}/chat/channels/${channelId}/archive`, {
+    method: 'POST', headers: { Authorization: state.token }
+  });
+  closeChatView();
+}
+
+// ── NEW CHANNEL MODAL ─────────────────────────────────────────
+function showNewChannelModal() {
+  chatState.selectedType      = 'unit';
+  chatState.selectedMemberIds = [];
+
+  // Show/hide leaders option based on role
+  const leadersBtn = document.getElementById('type-leaders');
+  if (leadersBtn) leadersBtn.style.display = state.role === 'leader' ? 'block' : 'none';
+
+  // Reset form
+  document.getElementById('new-channel-name').value = '';
+  document.getElementById('is-finite').checked      = false;
+  selectChannelType('unit');
+
+  // Populate member picker
+  renderMemberPicker();
+
+  document.getElementById('new-channel-modal').classList.add('show');
+}
+
+function closeNewChannelModal() {
+  document.getElementById('new-channel-modal').classList.remove('show');
+}
+
+function selectChannelType(type) {
+  chatState.selectedType = type;
+
+  // Update UI
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('type-' + type);
+  if (btn) btn.classList.add('selected');
+
+  // Show/hide name field
+  const nameField = document.getElementById('channel-name-field');
+  nameField.style.display = type === 'unit' ? 'none' : 'block';
+  if (type === 'unit') document.getElementById('new-channel-name').value = 'Unit Announcements';
+
+  // Show/hide finite option
+  document.getElementById('finite-field').style.display =
+    (type === 'project') ? 'block' : 'none';
+  if (type === 'project') document.getElementById('is-finite').checked = true;
+
+  // Show/hide member picker
+  document.getElementById('members-field').style.display =
+    (type === 'unit' || type === 'leaders') ? 'none' : 'block';
+}
+
+function renderMemberPicker() {
+  const picker = document.getElementById('member-picker');
+  const allMembers = [
+    ...state.members,
+    // Could add leaders here too
+  ];
+
+  if (!allMembers.length) {
+    picker.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px">Load members first</div>';
+    return;
+  }
+
+  picker.innerHTML = allMembers.map(m => {
+    const id   = m.id;
+    const name = `${m.first_name} ${m.last_name}`;
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px;cursor:pointer;border-radius:8px">
+      <input type="checkbox" value="${id}"
+        onchange="toggleMemberPicker('${id}')"
+        style="width:18px;height:18px" />
+      <span style="font-size:14px">${name}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleMemberPicker(memberId) {
+  const idx = chatState.selectedMemberIds.indexOf(memberId);
+  if (idx >= 0) chatState.selectedMemberIds.splice(idx, 1);
+  else chatState.selectedMemberIds.push(memberId);
+}
+
+async function createChannel() {
+  const name     = document.getElementById('new-channel-name').value.trim();
+  const type     = chatState.selectedType;
+  const isFinite = document.getElementById('is-finite').checked;
+
+  if (!name && type !== 'unit') {
+    alert('Please enter a channel name');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/chat/channels`, {
+      method:  'POST',
+      headers: { Authorization: state.token, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        name:       name || 'Unit Announcements',
+        type,
+        member_ids: chatState.selectedMemberIds,
+        is_finite:  isFinite,
+      }),
+    });
+
+    if (res.ok) {
+      closeNewChannelModal();
+      await loadChannels();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Could not create channel');
+    }
+  } catch(e) {
+    alert('Could not create channel: ' + e.message);
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatTime(dateStr) {
+  const d   = new Date(dateStr);
+  const now = new Date();
+  const diff = now - d;
+
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return d.toLocaleString('en-AU', { hour:'numeric', minute:'2-digit', hour12:true });
+  return d.toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+}
+
+
+// ── OFFLINE DETECTION ─────────────────────────────────────────
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ── BADGE DASHBOARD ───────────────────────────────────────────
+const OAS_STREAMS = {
+  bushcraft:   { name: 'Bushcraft',   icon: '🪵', maxStage: 5 },
+  camping:     { name: 'Camping',     icon: '⛺',  maxStage: 5 },
+  cycling:     { name: 'Cycling',     icon: '🚲', maxStage: 5 },
+  bushwalking: { name: 'Bushwalking', icon: '🥾', maxStage: 5 },
+  paddling:    { name: 'Paddling',    icon: '🛶', maxStage: 5 },
+  alpine:      { name: 'Alpine',      icon: '🏔️', maxStage: 5 },
+  sailing:     { name: 'Sailing',     icon: '⛵', maxStage: 5 },
+  swimming:    { name: 'Swimming',    icon: '🏊', maxStage: 5 },
+  vertical:    { name: 'Vertical',    icon: '🧗', maxStage: 5 },
+  snow_sports: { name: 'Snow Sports', icon: '⛷️', maxStage: 5 },
+};
+
+async function loadBadgesTab() {
+  if (state.role === 'leader') {
+    showScreen('badge-members');
+    renderBadgeMemberList();
+  } else {
+    await loadMemberBadges(state.terrainMemberId, state.name);
+  }
+}
+
+function renderBadgeMemberList() {
+  const list = document.getElementById('badge-member-list');
+  if (!state.members.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No members loaded</p></div>';
+    return;
+  }
+  list.innerHTML = state.members.map(m => {
+    const name = m.first_name + ' ' + m.last_name;
+    const initials = ((m.first_name||'')[0]||'').toUpperCase() + ((m.last_name||'')[0]||'').toUpperCase();
+    const safeId   = (m.id   || '').replace(/'/g, '');
+    const safeName = (name  || '').replace(/'/g, '');
+    return '<div class="member-select-row" onclick="loadMemberBadges(\'' + safeId + '\', \'' + safeName + '\')">' +
+      '<div class="member-avatar" style="width:40px;height:40px;font-size:15px">' + initials + '</div>' +
+      '<div><div style="font-size:15px;font-weight:600">' + safeName + '</div>' +
+      (m.patrol ? '<div style="font-size:12px;color:var(--text-muted)">' + m.patrol + '</div>' : '') +
+      '</div><div style="color:var(--text-muted);font-size:20px">&#8250;</div></div>';
+  }).join('');
+}
+
+async function loadMemberBadges(memberId, memberName) {
+  showScreen('badges');
+  document.getElementById('badge-member-name').textContent = memberName || 'Loading...';
+  document.getElementById('badge-content').innerHTML =
+    '<div class="loading-block"><div class="spinner dark"></div><p>Loading...</p></div>';
+  try {
+    const res = await fetch(API + '/achievements/' + memberId, {
+      headers: { Authorization: state.token }
+    });
+    if (!res.ok) { renderBadgePlaceholder(memberName); return; }
+    const data = await res.json();
+    renderBadgeDashboard(data, memberName);
+  } catch(e) {
+    renderBadgePlaceholder(memberName);
+  }
+}
+
+function renderBadgePlaceholder(name) {
+  document.getElementById('badge-section').textContent = 'Scouts';
+  document.getElementById('badge-content').innerHTML =
+    '<div class="next-badge-card">' +
+    '<h3>What you need right now</h3>' +
+    '<p>Badge data syncs automatically each night.<br>Check back after midnight for your progress!</p>' +
+    '<div class="next-actions">Keep attending meetings and completing activities in Terrain ✓</div>' +
+    '</div>';
+}
+
+function renderBadgeDashboard(data, memberName) {
+  const achievements = data.achievements || [];
+  const member       = data.member || {};
+  const oasItems     = achievements.filter(function(a) { return a.type === 'oas'; });
+  const milestones   = achievements.filter(function(a) { return a.type === 'milestone'; });
+
+  document.getElementById('badge-section').textContent =
+    (member.section || 'scout').charAt(0).toUpperCase() + (member.section || 'scout').slice(1) + ' Unit';
+
+  const oasMap = {};
+  oasItems.forEach(function(a) {
+    if (!oasMap[a.stream]) oasMap[a.stream] = {};
+    oasMap[a.stream][a.stage] = a.status;
+  });
+
+  let html = '';
+  if (!milestones.length) {
+    html += '<div class="next-badge-card"><h3>Currently working towards</h3>' +
+      '<p>Start your first Milestone by completing activities in each challenge area.</p></div>';
+  }
+
+  if (Object.keys(oasMap).length > 0) {
+    html += '<div class="section-label">Outdoor Adventure Skills</div><div class="oas-grid">';
+    Object.keys(oasMap).forEach(function(stream) {
+      const info  = OAS_STREAMS[stream] || { name: stream, icon: '🏕️', maxStage: 5 };
+      const dots  = Array.from({length: info.maxStage}, function(_, i) {
+        const stage  = i + 1;
+        const status = oasMap[stream][stage];
+        const cls    = status === 'awarded' ? 'awarded' : status === 'pending' ? 'pending' : 'empty';
+        return '<div class="stage-dot ' + cls + '">' + stage + '</div>';
+      }).join('');
+      html += '<div class="oas-stream"><div class="oas-stream-name">' + info.icon + ' ' + info.name + '</div>' +
+        '<div class="oas-stage-dots">' + dots + '</div></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="milestone-card"><h3>🏕️ Outdoor Adventure Skills</h3>' +
+      '<p style="font-size:14px;color:var(--text-muted)">No OAS progress yet. Try camping, bushwalking, or another outdoor activity!</p></div>';
+  }
+
+  document.getElementById('badge-content').innerHTML = html;
+}
+
+function checkUrlTab() {
+  if (typeof startTab === 'string' && startTab) showTab(startTab);
+}
+
+
+
+// Wrapper that auto-handles token expiry
+async function apiFetch(url, options = {}) {
+  if (!options.headers) options.headers = {};
+  options.headers.Authorization = state.token;
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    handleTokenExpiry();
+    return null;
+  }
+  return res;
+}
+
+// ── STATE ─────────────────────────────────────────────────────
+let state = {
+  token:    null,
+  memberId: null,
+  unitId:   null,
+  role:     null,
+  name:     null,
+  events:   [],
+  members:  [],
+  attendance: {},
+  currentEvent: null,
+  rollEditMode: true, // true = can edit, false = view only
+};
+
+// ── LOGIN ─────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('input-username').value.trim().toLowerCase();
+  const password = document.getElementById('input-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('btn-login');
+
+  errEl.classList.remove('show');
+  if (!username || !password) {
+    errEl.textContent = 'Enter your member ID and password.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const res  = await fetch(`${API}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    state.token           = data.token;
+    state.memberId        = data.member_id;
+    state.unitId          = data.unit_id;
+    state.role            = data.role;
+    state.name            = data.name || data.member_id; // comes from members API now
+    state.terrainMemberId = data.terrain_member_id;
+
+    // Save session
+    localStorage.setItem('scouts_session', JSON.stringify({
+      token: state.token, memberId: state.memberId,
+      unitId: state.unitId, role: state.role, name: state.name,
+      terrainMemberId: state.terrainMemberId,
+    }));
+
+    const wasLoggedIn = !!document.getElementById('app-header').style.display && 
+                        document.getElementById('app-header').style.display !== 'none';
+    enterApp();
+    
+    // If we were already in the app (token refresh), just reload data
+    if (wasLoggedIn) {
+      loadData();
+    }
+
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Sign in';
+  }
+}
+
+function enterApp() {
+  // Update header
+  document.getElementById('app-header').style.display = 'block';
+  updateOnlineStatus(); // Check offline status
+  document.getElementById('bottom-nav').style.display = 'flex';
+  // Hide login modal
+  const loginModal = document.getElementById('login-modal');
+  if (loginModal) loginModal.classList.remove('show');
+  document.getElementById('header-role').textContent =
+    state.role === 'leader' ? 'Leader' : 'Scout Member';
+
+  const initials = state.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('header-avatar').textContent    = initials;
+  document.getElementById('profile-avatar-lg').textContent = initials;
+  document.getElementById('profile-name').textContent    = state.name;
+  document.getElementById('profile-role').textContent    = state.role === 'leader' ? 'Leader' : 'Youth Member';
+  document.getElementById('profile-member-id').textContent = 'Member ID: ' + state.memberId;
+  document.getElementById('profile-unit-id').textContent   = 'Unit: ' + state.unitId;
+  document.getElementById('home-name').textContent = (state.name && !state.name.startsWith('vic-')) ? state.name.split(' ')[0] : 'Leader';
+
+  showTab('home');
+  loadData();
+}
+
+// ── DATA LOADING ──────────────────────────────────────────────
+async function loadData() {
+  await Promise.all([loadEvents(), loadMembers()]);
+}
+
+async function loadEvents() {
+  try {
+    const res  = await apiFetch(`${API}/events`);
+    if (!res) return; // token expired, modal shown
+    const data = await res.json();
+    state.events = data.results || [];
+    renderHomeEvents();
+    renderRollEvents();
+    document.getElementById('home-events-count').textContent = state.events.length;
+  } catch(e) {
+    document.getElementById('home-events-list').innerHTML =
+      `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function loadMembers() {
+  if (state.role !== 'leader') return;
+  try {
+    const res  = await fetch(`${API}/members`, {
+      headers: { Authorization: state.token }
+    });
+    const data = await res.json();
+    state.members = data.results || [];
+    document.getElementById('home-members-count').textContent = state.members.length;
+  } catch(_) {}
+}
+
+// ── RENDER HOME ───────────────────────────────────────────────
+function renderHomeEvents() {
+  const list   = document.getElementById('home-events-list');
+  const recent = state.events.slice(0, 5);
+
+  if (!recent.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No recent meetings found.</p></div>';
+    return;
+  }
+  list.innerHTML = recent.map(ev => eventCardHTML(ev, true)).join('');
+}
+
+function renderRollEvents() {
+  const list = document.getElementById('roll-events-list');
+  if (!state.events.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No meetings found.</p></div>';
+    return;
+  }
+  list.innerHTML = state.events.map(ev => eventCardHTML(ev, false)).join('');
+}
+
+function eventCardHTML(ev, compact) {
+  const d    = new Date(ev.start_datetime);
+  const day  = d.getDate();
+  const mon  = d.toLocaleString('en-AU', { month: 'short' });
+  const time = d.toLocaleString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const concluded  = ev.status === 'concluded';
+  const hasAtt     = (ev.attendee_count || 0) > 0;
+  const isPast     = new Date(ev.start_datetime) < new Date();
+
+  // Badge logic:
+  // - concluded + has attendance = Roll taken (green)
+  // - concluded + no attendance = No roll recorded (grey, less alarming)
+  // - upcoming = Upcoming (blue)
+  // - past but not concluded = Roll missing (amber - needs action)
+  let badgeClass, badgeText;
+  if (concluded && hasAtt)       { badgeClass = 'badge-done';    badgeText = '✓ Roll taken'; }
+  else if (concluded && !hasAtt) { badgeClass = 'badge-grey';    badgeText = 'No roll recorded'; }
+  else if (!concluded && isPast) { badgeClass = 'badge-missing'; badgeText = '⚠ Roll missing'; }
+  else                           { badgeClass = 'badge-future';  badgeText = 'Upcoming'; }
+
+  const onclick = state.role === 'leader' ? `selectEvent('${ev.id}')` : '';
+
+  return `<div class="event-card ${concluded && !hasAtt ? 'roll-missing' : ''}" onclick="${onclick}">
+    <div class="event-date">
+      <div class="day">${day}</div>
+      <div class="mon">${mon}</div>
+    </div>
+    <div class="event-info">
+      <div class="event-name">${ev.title || 'Meeting'}</div>
+      <div class="event-meta">${time}${ev.location ? ' · ' + ev.location : ''}</div>
+      <span class="event-badge ${badgeClass}">${badgeText}</span>
+    </div>
+    ${state.role === 'leader' ? '<div style="color:#9CA3AF;font-size:20px">›</div>' : ''}
+  </div>`;
+}
+
+// ── ROLL TAKING ───────────────────────────────────────────────
+async function selectEvent(eventId) {
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) return;
+
+  state.currentEvent = ev;
+  state.attendance   = {};
+  state.members      = []; // Reset — load fresh for this event's unit
+
+  const d = new Date(ev.start_datetime);
+  document.getElementById('roll-title').textContent    = ev.title || 'Meeting';
+  document.getElementById('roll-date').textContent     =
+    d.toLocaleString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
+  document.getElementById('roll-location').textContent = ev.location ? '📍 ' + ev.location : '';
+
+  showScreen('roll-take');
+  document.getElementById('member-list').innerHTML =
+    '<div class="loading-block"><div class="spinner dark"></div><p>Loading members…</p></div>';
+
+  const isConcluded = ev.status === 'concluded';
+  state.rollEditMode = !isConcluded; // new events start in edit mode, concluded in view mode
+
+  try {
+    const [membersRes, attRes] = await Promise.all([
+      fetch(`${API}/members/${eventId}`, { headers: { Authorization: state.token } }),
+      fetch(`${API}/attendance/${eventId}`, { headers: { Authorization: state.token } }),
+    ]);
+
+    if (membersRes.ok) {
+      const membersData = await membersRes.json();
+      state.members = (membersData.results || []).sort((a, b) =>
+        (a.last_name || '').localeCompare(b.last_name || '')
+      );
+    }
+
+    if (attRes.ok) {
+      const attData = await attRes.json();
+      (attData.results || []).forEach(r => {
+        if (r.attended) state.attendance[r.member_id] = true;
+      });
+    }
+  } catch(e) {
+    console.error('Error loading roll data:', e);
+  }
+
+  updateRollMode();
+  renderMemberList(!state.rollEditMode);
+  updateAttCount();
+}
+
+function updateRollMode() {
+  const isConcluded = state.currentEvent?.status === 'concluded';
+  const editMode    = state.rollEditMode;
+  const saveBar     = document.querySelector('.save-bar');
+  const quickRow    = document.querySelector('.quick-row');
+
+  // Save bar — show in edit mode only
+  if (saveBar) saveBar.style.display = editMode ? 'flex' : 'none';
+
+  // Quick actions — show in edit mode only
+  if (quickRow) quickRow.style.display = editMode ? 'flex' : 'none';
+
+  // Remove existing banner/edit button
+  document.getElementById('roll-status-bar')?.remove();
+
+  // Add status bar
+  const bar = document.createElement('div');
+  bar.id = 'roll-status-bar';
+
+  if (isConcluded && !editMode) {
+    // View mode — show finalised banner with edit button
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#F0FFF6;border:1px solid #6EE7B7;color:#065F46;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px';
+    bar.innerHTML = '<span>✓ Finalised in Terrain</span><button onclick="enterRollEditMode()" style="background:#065F46;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Edit roll</button>';
+  } else if (isConcluded && editMode) {
+    // Edit mode on concluded event — show warning
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px';
+    bar.innerHTML = '<span>⚠️ Editing finalised roll</span><button onclick="cancelRollEdit()" style="background:transparent;border:1px solid #92400E;color:#92400E;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Cancel</button>';
+  }
+
+  if (bar.innerHTML) {
+    document.querySelector('.att-bar')?.after(bar);
+  }
+}
+
+function enterRollEditMode() {
+  state.rollEditMode = true;
+  updateRollMode();
+  renderMemberList(false); // enable tapping
+}
+
+function cancelRollEdit() {
+  state.rollEditMode = false;
+  // Reload original attendance
+  selectEvent(state.currentEvent.id);
+}
+
+function renderMemberList(readOnly = false) {
+  const list = document.getElementById('member-list');
+  if (!state.members.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No members found for this unit.</p></div>';
+    return;
+  }
+  list.innerHTML = state.members.map(m => {
+    const id      = m.id;
+    const present = !!state.attendance[id];
+    const first   = m.first_name || '?';
+    const last    = m.last_name  || '';
+    const initials = ((first[0]||'') + (last[0]||'')).toUpperCase();
+    const patrol  = m.patrol || '';
+    const clickHandler = readOnly ? '' : `onclick="toggleMember('${id}')"`;
+    const rowStyle = readOnly ? 'opacity:0.85;cursor:default' : '';
+    return `<div class="member-row ${present?'present':''}" id="mr-${id}" ${clickHandler} style="${rowStyle}">
+      <div class="member-avatar">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div class="member-name">${first} ${last}</div>
+        ${patrol ? `<div class="member-sub">${patrol}</div>` : ''}
+      </div>
+      <div class="check-circle">✓</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMember(id) {
+  if (!state.rollEditMode) return; // view mode — no changes
+  state.attendance[id] = !state.attendance[id];
+  const el = document.getElementById('mr-' + id);
+  if (el) el.classList.toggle('present', state.attendance[id]);
+  updateAttCount();
+}
+
+function markAll(val) {
+  if (state.currentEvent?.status === 'concluded') return;
+  state.members.forEach(m => { state.attendance[m.id] = val; });
+  renderMemberList();
+  updateAttCount();
+}
+
+function updateAttCount() {
+  const n = Object.values(state.attendance).filter(Boolean).length;
+  document.getElementById('att-num').textContent   = n;
+  document.getElementById('att-total').textContent = 'of ' + state.members.length;
+}
+
+async function doSaveRoll() {
+  if (new Date(state.currentEvent.start_datetime) > new Date()) {
+    alert("You can't take the roll for an event that hasn't happened yet.");
+    return;
+  }
+
+  const isConcluded  = state.currentEvent?.status === 'concluded';
+  const presentCount = Object.values(state.attendance).filter(Boolean).length;
+  const msg = isConcluded
+    ? `Save corrected roll for ${state.currentEvent.title}?\n\n${presentCount} of ${state.members.length} members present.\n\nThis will update the record in Terrain.`
+    : `Save roll for ${state.currentEvent.title}?\n\n${presentCount} of ${state.members.length} members present.\n\nThis will sync to Terrain tonight.`;
+
+  const confirmed = confirm(msg);
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btn-save-roll');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Saving…';
+
+  try {
+    const presentIds = state.members.map(m => m.id).filter(id => state.attendance[id]);
+
+    const res = await fetch(`${API}/attendance/${state.currentEvent.id}`, {
+      method:  'POST',
+      headers: { Authorization: state.token, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ present_ids: presentIds }),
+    });
+
+    if (res.status === 401) { handleTokenExpiry(); return; }
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Save failed');
+    }
+
+    const d = new Date(state.currentEvent.start_datetime);
+    document.getElementById('success-detail').innerHTML = `
+      <div><span class="lbl">Event</span>${state.currentEvent.title}</div>
+      <div><span class="lbl">Date</span>${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long'})}</div>
+      <div><span class="lbl">Present</span>${presentIds.length} of ${state.members.length} members</div>
+      <div><span class="lbl">Syncing</span>Tonight's nightly sync</div>
+    `;
+
+    // If we were editing a concluded event, switch back to view mode
+    if (state.currentEvent?.status === 'concluded') {
+      state.rollEditMode = false;
+    }
+    showScreen('success');
+    loadEvents();
+
+  } catch(e) {
+    alert('Could not save: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Save to Terrain';
+  }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showTab(tab) {
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + tab);
+  if (navEl) navEl.classList.add('active');
+
+  const screenMap = { home: 'home', roll: 'roll-list', profile: 'profile', chat: 'chat', badges: 'badges' };
+  showScreen(screenMap[tab] || tab);
+
+  if (tab === 'chat')   loadChannels();
+  if (tab === 'badges') loadBadgesTab();
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────
+function handleTokenExpiry() {
+  // Clear session but keep app state visible underneath
+  state.token = null;
+  localStorage.removeItem('scouts_session');
+
+  // Show login modal with expiry message
+  const loginModal = document.getElementById('login-modal');
+  if (loginModal) loginModal.classList.add('show');
+
+  const subtitle = document.getElementById('login-subtitle');
+  if (subtitle) subtitle.textContent = 'Your session expired — please sign in again';
+
+  const errEl = document.getElementById('login-error');
+  if (errEl) {
+    errEl.textContent = 'Session expired. Please sign in again.';
+    errEl.classList.add('show');
+  }
+}
+
+async function doReauth() {
+  const password = document.getElementById('reauth-password').value;
+  const errEl    = document.getElementById('reauth-error');
+  const btn      = document.getElementById('reauth-btn');
+
+  errEl.classList.remove('show');
+  if (!password) {
+    errEl.textContent = 'Please enter your password.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const res  = await fetch(`${API}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ username: state.memberId, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Incorrect password');
+
+    state.token           = data.token;
+    state.name            = data.name || state.name;
+    state.terrainMemberId = data.terrain_member_id || state.terrainMemberId;
+
+    const saved = JSON.parse(localStorage.getItem('scouts_session') || '{}');
+    saved.token           = data.token;
+    saved.name            = state.name;
+    saved.terrainMemberId = state.terrainMemberId;
+    localStorage.setItem('scouts_session', JSON.stringify(saved));
+
+    document.getElementById('reauth-modal').classList.remove('show');
+    document.getElementById('reauth-password').value = '';
+    loadData();
+
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = 'Sign in';
+  }
+}
+
+
+function doLogout() {
+  localStorage.removeItem('scouts_session');
+  state = { token:null, memberId:null, unitId:null, role:null, name:null, events:[], members:[], attendance:{}, currentEvent:null };
+  document.getElementById('app-header').style.display = 'none';
+  document.getElementById('bottom-nav').style.display = 'none';
+  document.getElementById('input-password').value = '';
+  showScreen('login');
+}
+
+// ── SESSION RESTORE ───────────────────────────────────────────
+function restoreSession() {
+  try {
+    const saved = localStorage.getItem('scouts_session');
+    if (saved) {
+      const s = JSON.parse(saved);
+      state.token           = s.token;
+      state.memberId        = s.memberId;
+      state.unitId          = s.unitId;
+      state.role            = s.role;
+      state.name            = s.name;
+      state.terrainMemberId = s.terrainMemberId || null;
+      enterApp();
+      setTimeout(checkUrlTab, 100);
+    } else {
+      // No session — show login screen
+      showLoginScreen();
+    }
+  } catch(_) {
+    showLoginScreen();
+  }
+}
+
+function showLoginScreen() {
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('app-header').style.display   = 'none';
+  document.getElementById('bottom-nav').style.display   = 'none';
+}
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────
+document.getElementById('input-password').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+document.addEventListener('DOMContentLoaded', () => {
+  const reauthPwd = document.getElementById('reauth-password');
+  if (reauthPwd) reauthPwd.addEventListener('keydown', e => { if (e.key==='Enter') doReauth(); });
+});
+document.getElementById('input-username').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('input-password').focus(); });
+
+// ── INIT ──────────────────────────────────────────────────────
+// Wrap fetch to intercept token expiry globally
+const _origFetch = window.fetch;
+window.fetch = async function(url, opts) {
+  const res = await _origFetch(url, opts);
+  if (res.status === 401 && typeof url === 'string' && url.includes('scouts-app-deon')) {
+    handleTokenExpiry();
+    return res;
+  }
+  return res;
+};
+
+restoreSession();
+</script>
+</body>
+</html>

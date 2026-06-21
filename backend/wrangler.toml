@@ -1,0 +1,11 @@
+name = "scouts-app-backend"
+main = "src/index.js"
+compatibility_date = "2026-06-20"
+
+[triggers]
+crons = ["0 14 * * *"]  # midnight AEST (UTC+10) every night
+
+[[d1_databases]]
+binding = "scouts_db"
+database_name = "scouts-db"
+database_id = "b9488abf-c33b-4ba4-a912-c36219f29c70"
