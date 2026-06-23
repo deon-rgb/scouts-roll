@@ -1977,9 +1977,12 @@ function restoreSession() {
 }
 
 function showLoginScreen() {
-  document.getElementById('screen-login').style.display = 'flex';
-  document.getElementById('app-header').style.display   = 'none';
-  document.getElementById('bottom-nav').style.display   = 'none';
+  const loginModal = document.getElementById('login-modal');
+  if (loginModal) loginModal.classList.add('show');
+  const header = document.getElementById('app-header');
+  if (header) header.style.display = 'none';
+  const nav = document.getElementById('bottom-nav');
+  if (nav) nav.style.display = 'none';
 }
 
 // ── KEYBOARD SHORTCUTS ────────────────────────────────────────
