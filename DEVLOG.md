@@ -278,9 +278,9 @@ Template `version` in achievement records (e.g. `"template": "oas/vertical/1"`) 
 
 4. **Chat not yet fully tested end-to-end** — Needs a real test with two accounts sending messages.
 
-5. **Badge dashboard shows placeholder only** — API is now fully mapped (2026-06-23). Use `GET achievements.terrain.scouts.com.au/members/{guid}/achievements` per member, or `GET .../units/{unit_id}/achievements` for the whole unit at once. Leader accounts return `{ results: [] }` — query youth member GUIDs only.
+5. **Badge dashboard UX needs work** — Real data loading correctly. Design/UX pass needed.
 
-6. **Debug endpoint still deployed** — `/debug` GET endpoint exposes token data; remove before wider rollout.
+6. ~~Debug endpoint~~ — Removed.
 
 7. **Events API requires date params** — `GET /members/{guid}/events` with no query params returns 502. Must pass `start_datetime` and `end_datetime`. The current worker sync may be broken if it omits these.
 
@@ -316,3 +316,23 @@ Systematic mapping of all Terrain API endpoints using live token from D1. Key di
 2. Update Known bugs
 3. Add any new Terrain API discoveries to the API reference section
 4. Note any new migrations in the Migration history table
+
+---
+
+## Session log: 2026-06-23 (evening)
+
+- Fixed events sync — added required `start_datetime`/`end_datetime` params to Terrain API call
+- Added `/achievements/{memberId}` endpoint — fetches live from `achievements.terrain.scouts.com.au`
+- Fixed attendance logic — `attendee_members` only (not `participant_members`)
+- Removed `/debug` endpoint
+- Badge dashboard now shows real Terrain data — OAS, milestones, SIA, AJ, peak awards
+- Events now sync in background on login (not just nightly)
+- Clean worker rewrite — removed orphaned code
+
+**Outstanding for next session:**
+- Badge dashboard UX/design pass
+- Chat end-to-end test
+- Two-way attendance sync (Terrain → App when changed directly in Terrain)
+- Dual-membership youth pre-tick
+
+---
