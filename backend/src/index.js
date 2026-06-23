@@ -1,8 +1,8 @@
 // ── CONSTANTS ─────────────────────────────────────────────────
 const COGNITO_ENDPOINT = 'https://cognito-idp.ap-southeast-2.amazonaws.com/';
 const COGNITO_CLIENT_ID = '6v98tbc09aqfvh52fml3usas3c';
-const GROUP_ID  = '89053a96-7a60-3680-8212-bcd64a7996cb';
-const UNIT_ID   = '054bc5df-bb9d-4ef9-a041-1a22518c4d1a'; // Scouts (default)
+const TERRAIN_MEMBERS  = 'https://members.terrain.scouts.com.au';
+const TERRAIN_EVENTS   = 'https://events.terrain.scouts.com.au';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -19,6 +19,13 @@ const err = (msg, status = 400) => json({ error: msg }, status);
 function generateId() { return crypto.randomUUID(); }
 
 function isSupervisor(member) { return member.role === 'leader'; }
+
+// Decode JWT payload (no verification — we trust our own DB)
+function decodeJwtPayload(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch(_) { return null; }
+}
 
 // ── MAIN ROUTER ───────────────────────────────────────────────
 export default {
@@ -43,7 +50,7 @@ export default {
 
     // Members for a specific event (with optional unit_id override)
     if (path.startsWith('/members/') && method === 'GET') {
-      const eventId = path.split('/')[2];
+      const eventId    = path.split('/')[2];
       const unitOverride = url.searchParams.get('unit_id') || null;
       return handleGetMembersForEvent(eventId, unitOverride, env, member);
     }
@@ -78,6 +85,65 @@ export default {
       return json(rows.results);
     }
 
+    // Debug: show auth token row + trigger sync manually
+    if (path === '/debug' && method === 'GET') {
+      const tokenRow = await env.scouts_db.prepare(
+        `SELECT member_id, expires_at, unit_id, unit_ids, role, terrain_member_id, first_name, last_name
+         FROM auth_tokens WHERE token = ? LIMIT 1`
+      ).bind(token).first();
+
+      const eventCount = await env.scouts_db.prepare(
+        `SELECT COUNT(*) as c FROM events`
+      ).first();
+
+      const memberCount = await env.scouts_db.prepare(
+        `SELECT COUNT(*) as c FROM members`
+      ).first();
+
+      // Try calendars with sub-claim GUID
+      let calendarsRaw = null;
+      if (tokenRow?.terrain_member_id) {
+        try {
+          const calRes = await fetch(
+            `https://events.terrain.scouts.com.au/members/${tokenRow.terrain_member_id}/calendars`,
+            { headers: { Authorization: token } }
+          );
+          const t1 = await calRes.text();
+          calendarsRaw = { status: calRes.status, raw: t1.slice(0, 500) };
+        } catch(e) {
+          calendarsRaw = { error: e.message };
+        }
+      }
+
+      // Try calendars with known correct Terrain GUID
+      let calendarsKnown = null;
+      try {
+        const calRes2 = await fetch(
+          `https://events.terrain.scouts.com.au/members/f96cccbd-b7da-3199-ac82-0d94d2630dd6/calendars`,
+          { headers: { Authorization: token } }
+        );
+        const t2 = await calRes2.text();
+        calendarsKnown = { status: calRes2.status, raw: t2.slice(0, 500) };
+      } catch(e) {
+        calendarsKnown = { error: e.message };
+      }
+
+      // Also try members profile with known GUID
+      let memberProfile = null;
+      try {
+        const mpRes = await fetch(
+          `https://members.terrain.scouts.com.au/members/f96cccbd-b7da-3199-ac82-0d94d2630dd6`,
+          { headers: { Authorization: token } }
+        );
+        const t3 = await mpRes.text();
+        memberProfile = { status: mpRes.status, raw: t3.slice(0, 500) };
+      } catch(e) {
+        memberProfile = { error: e.message };
+      }
+
+      return json({ tokenRow, eventCount, memberCount, calendarsRaw, calendarsKnown, memberProfile });
+    }
+
     return err('Not found', 404);
   },
 
@@ -92,7 +158,8 @@ async function handleLogin(request, env) {
   if (!username || !password) return err('Username and password required');
 
   try {
-    const res = await fetch(COGNITO_ENDPOINT, {
+    // 1. Authenticate with Cognito
+    const cognitoRes = await fetch(COGNITO_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-amz-json-1.1',
@@ -105,82 +172,173 @@ async function handleLogin(request, env) {
       }),
     });
 
-    const data = await res.json();
-    if (!res.ok || !data.AuthenticationResult) {
-      return err(data.message || 'Incorrect username or password', 401);
+    const cognitoData = await cognitoRes.json();
+    if (!cognitoRes.ok || !cognitoData.AuthenticationResult) {
+      return err(cognitoData.message || 'Incorrect username or password', 401);
     }
 
-    const idToken = data.AuthenticationResult.IdToken;
-    const payload = JSON.parse(atob(idToken.split('.')[1]));
-    const memberId = payload['cognito:username'] || username;
-    const unitId   = payload['custom:unitid'] || UNIT_ID;
-    const role     = detectRole(payload);
+    const idToken = cognitoData.AuthenticationResult.IdToken;
 
-    let terrainMemberId = null;
-    let firstName = '';
-    let lastName  = '';
-    let memberUnitIds = [unitId];
+    // 2. Decode JWT to get Cognito username (e.g. "vic-8134812")
+    const payload         = decodeJwtPayload(idToken);
+    const cognitoUsername = payload?.['cognito:username'] || username;
+    const memberNumber    = cognitoUsername.replace(/^[a-z]+-/i, ''); // strip "vic-" → "8134812"
 
-    // Fetch full profile from Terrain members API for name + GUID + unit assignments
+    // 3. Get Terrain GUID + name from local DB first (fast, reliable)
+    let terrainGuid = null;
+    let firstName   = '';
+    let lastName    = '';
     try {
-      const memberRes = await fetch(
-        `https://members.terrain.scouts.com.au/members/${encodeURIComponent(memberId)}`,
+      const localMember = await env.scouts_db.prepare(
+        `SELECT id, first_name, last_name FROM members WHERE member_number = ? LIMIT 1`
+      ).bind(memberNumber).first();
+      if (localMember) {
+        terrainGuid = localMember.id;
+        firstName   = localMember.first_name || '';
+        lastName    = localMember.last_name  || '';
+      }
+    } catch(_) {}
+
+    // Also try Terrain members API with member number (works for some endpoints)
+    if (!terrainGuid) {
+      try {
+        const profileRes = await fetch(
+          `${TERRAIN_MEMBERS}/members/${memberNumber}`,
+          { headers: { Authorization: idToken } }
+        );
+        if (profileRes.ok) {
+          const pd  = await profileRes.json();
+          terrainGuid = pd.id || null;
+          firstName   = pd.first_name || firstName;
+          lastName    = pd.last_name  || lastName;
+        }
+      } catch(e) {
+        console.log('Profile fetch by member number failed:', e.message);
+      }
+    }
+
+    if (!terrainGuid) {
+      return err('Could not determine Terrain GUID. Please ensure members are synced.', 500);
+    }
+
+    // 4. Fetch the leader's unit assignments via the calendars endpoint
+    //    GET /members/{terrain_guid}/calendars — returns all units this leader manages
+    let unitIds   = [];
+    let primaryUnitId = null;
+    try {
+      const calRes = await fetch(
+        `${TERRAIN_EVENTS}/members/${terrainGuid}/calendars`,
         { headers: { Authorization: idToken } }
       );
-      if (memberRes.ok) {
-        const md = await memberRes.json();
-        terrainMemberId = md.id || null;
-        firstName = md.first_name || '';
-        lastName  = md.last_name  || '';
-        memberUnitIds = (md.units || []).map(u => u.id).filter(Boolean);
-        if (!memberUnitIds.length) memberUnitIds = [unitId];
+      if (calRes.ok) {
+        const calData = await calRes.json();
+        // Response shape: { calendars: [ { id, unit_id, section, ... }, ... ] }
+        // Each calendar entry has the unit's invitee_id / unit_id
+        // own_calendars has entries with type "group" and "unit" — we only want units
+        const calendars = calData.own_calendars || calData.calendars || calData.results || [];
+        unitIds = calendars
+          .filter(c => c.type === 'unit')
+          .map(c => c.id)
+          .filter(Boolean);
+        // Primary unit = first unit returned
+        primaryUnitId = unitIds[0] || null;
+        console.log('Calendars fetched:', JSON.stringify(unitIds));
+      } else {
+        console.log('Calendars fetch failed:', calRes.status, await calRes.text());
       }
     } catch(e) {
-      console.log('Profile fetch failed:', e.message);
+      console.log('Calendars fetch error:', e.message);
     }
 
-    // Fallback: look up name from local members table if Terrain fetch failed
-    if (!firstName) {
+    // Fallback: look up unit from local DB if calendars call failed
+    if (!primaryUnitId) {
       try {
         const localMember = await env.scouts_db.prepare(
-          `SELECT first_name, last_name, id FROM members WHERE member_number = ? LIMIT 1`
-        ).bind(memberId).first();
-        if (localMember) {
-          firstName = localMember.first_name || '';
-          lastName  = localMember.last_name  || '';
-          if (!terrainMemberId) terrainMemberId = localMember.id;
+          `SELECT unit_id FROM members WHERE id = ? LIMIT 1`
+        ).bind(terrainGuid).first();
+        if (localMember?.unit_id) {
+          primaryUnitId = localMember.unit_id;
+          unitIds = [primaryUnitId];
         }
       } catch(_) {}
     }
 
+    // 5. Sync this leader's units' members from Terrain
+    //    Do this in the background — don't block the login response
+    if (unitIds.length > 0) {
+      syncMembersForUnits(unitIds, idToken, env).catch(e =>
+        console.log('Member sync error (non-fatal):', e.message)
+      );
+    }
+
+    // 6. Store auth token with correct unit assignments
     const expiresAt   = new Date(Date.now() + 3600 * 1000).toISOString();
-    const unitIdsJson = JSON.stringify(memberUnitIds);
+    const unitIdsJson = JSON.stringify(unitIds);
+    const role        = 'leader'; // All app users are leaders for now
 
     await env.scouts_db.prepare(
       `INSERT OR REPLACE INTO auth_tokens
        (member_id, token, expires_at, unit_id, role, terrain_member_id, unit_ids, first_name, last_name)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(memberId, idToken, expiresAt, unitId, role, terrainMemberId, unitIdsJson, firstName, lastName).run();
+    ).bind(cognitoUsername, idToken, expiresAt, primaryUnitId, role, terrainGuid,
+           unitIdsJson, firstName, lastName).run();
 
-    const name = (firstName + ' ' + lastName).trim() || memberId;
-    return json({ token: idToken, member_id: memberId, unit_id: unitId, role, name,
-                  terrain_member_id: terrainMemberId });
+    const name = (firstName + ' ' + lastName).trim() || cognitoUsername;
+    return json({
+      token:              idToken,
+      member_id:          cognitoUsername,
+      unit_id:            primaryUnitId,
+      unit_ids:           unitIds,
+      role,
+      name,
+      terrain_member_id:  terrainGuid,
+    });
 
   } catch(e) {
     return err('Login failed: ' + e.message, 500);
   }
 }
 
-function detectRole(payload) {
-  const groups     = payload['cognito:groups'] || [];
-  const roles      = payload['custom:roles']   || '';
-  const memberType = payload['custom:memberType'] || '';
-  if (
-    groups.some(g => /leader|admin|sl|asl|gl|adult/i.test(g)) ||
-    /leader|sl|asl|gl|adult/i.test(roles) ||
-    /leader/i.test(memberType)
-  ) return 'leader';
-  return 'leader'; // Default to leader until Terrain role data is clearer
+// ── MEMBER SYNC PER UNIT ──────────────────────────────────────
+// Called at login to keep member lists fresh.
+// Uses /units/{unit_id}/members — the correct per-unit endpoint.
+async function syncMembersForUnits(unitIds, token, env) {
+  for (const unitId of unitIds) {
+    try {
+      const res = await fetch(
+        `${TERRAIN_MEMBERS}/units/${unitId}/members`,
+        { headers: { Authorization: token } }
+      );
+      if (!res.ok) {
+        console.log(`Unit member sync failed for ${unitId}:`, res.status);
+        continue;
+      }
+      const data    = await res.json();
+      const members = data.members || data.results || [];
+
+      const stmt = env.scouts_db.prepare(
+        `INSERT OR REPLACE INTO members
+         (id, first_name, last_name, patrol, role, status, unit_id, member_number, last_synced)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      );
+
+      const batch = members.map(m => stmt.bind(
+        m.id,
+        m.first_name || '',
+        m.last_name  || '',
+        m.patrol?.name || null,
+        m.member_type?.includes('adult') || m.member_type?.includes('leader') ? 'leader' : 'member',
+        m.status || 'active',
+        unitId,
+        m.member_number || null,
+      ));
+
+      if (batch.length) await env.scouts_db.batch(batch);
+      console.log(`Synced ${batch.length} members for unit ${unitId}`);
+    } catch(e) {
+      console.log(`syncMembersForUnits error for ${unitId}:`, e.message);
+    }
+  }
 }
 
 // ── TOKEN VALIDATION ──────────────────────────────────────────
@@ -194,7 +352,9 @@ async function validateToken(token, env) {
 async function handleGetEvents(env, member) {
   let unitIds;
   try { unitIds = JSON.parse(member.unit_ids || '[]'); } catch(_) { unitIds = []; }
-  if (!unitIds.length) unitIds = [member.unit_id];
+  if (!unitIds.length) unitIds = member.unit_id ? [member.unit_id] : [];
+
+  if (!unitIds.length) return json({ results: [] });
 
   const placeholders = unitIds.map(() => '?').join(',');
   const rows = await env.scouts_db.prepare(
@@ -209,7 +369,7 @@ async function handleGetEvents(env, member) {
   return json({ results: rows.results });
 }
 
-// ── GET MEMBERS FOR EVENT (with optional unit_id override) ────
+// ── GET MEMBERS FOR EVENT ─────────────────────────────────────
 async function handleGetMembersForEvent(eventId, unitOverride, env, member) {
   const event = await env.scouts_db.prepare(
     `SELECT unit_id, start_datetime, status FROM events WHERE id = ?`
@@ -217,10 +377,8 @@ async function handleGetMembersForEvent(eventId, unitOverride, env, member) {
 
   if (!event) return err('Event not found', 404);
 
-  // If a unit override is provided and it's 'all', return all members across every unit
-  // If a unit override is provided, use it; otherwise fall back to the event's stored unit
   let targetUnitId = event.unit_id;
-  let allUnits = false;
+  let allUnits     = false;
 
   if (unitOverride === 'all') {
     allUnits = true;
@@ -253,11 +411,13 @@ async function handleGetMembersForEvent(eventId, unitOverride, env, member) {
 
 // ── GET MEMBERS (generic — home tab count) ────────────────────
 async function handleGetMembers(env, member) {
+  const unitId = member.unit_id;
+  if (!unitId) return json({ results: [] });
   const rows = await env.scouts_db.prepare(
     `SELECT * FROM members
      WHERE unit_id = ? AND status = 'active' AND role = 'member'
      ORDER BY last_name, first_name`
-  ).bind(member.unit_id).all();
+  ).bind(unitId).all();
   return json({ results: rows.results });
 }
 
@@ -274,7 +434,6 @@ async function handleSaveAttendance(eventId, request, env, member) {
   const { present_ids } = await request.json();
   if (!Array.isArray(present_ids)) return err('present_ids must be an array');
 
-  // Get all members for this event's unit
   const event = await env.scouts_db.prepare(
     `SELECT unit_id FROM events WHERE id = ?`
   ).bind(eventId).first();
@@ -303,12 +462,97 @@ async function handleSaveAttendance(eventId, request, env, member) {
 // ── SYNC ──────────────────────────────────────────────────────
 async function handleSync(request, env, member) {
   if (!isSupervisor(member)) return err('Leaders only', 403);
-  await runSync(env, member.token || null);
+
+  // Also sync events from Terrain
+  const token = member.token || null;
+  await runFullSync(env, token, member);
   return json({ success: true });
 }
 
+// ── FULL SYNC (attendance + events) ──────────────────────────
 async function runSync(env, token) {
-  // Pull pending attendance records and push to Terrain
+  await runFullSync(env, token, null);
+}
+
+async function runFullSync(env, token, member) {
+  let syncToken = token;
+
+  if (!syncToken) {
+    const latest = await env.scouts_db.prepare(
+      `SELECT token, terrain_member_id, unit_ids FROM auth_tokens
+       WHERE expires_at > datetime('now') ORDER BY expires_at DESC LIMIT 1`
+    ).first();
+    syncToken = latest?.token || null;
+
+    // Also sync events while we have the token and terrain GUID
+    if (syncToken && latest?.terrain_member_id) {
+      await syncEventsFromTerrain(
+        latest.terrain_member_id,
+        syncToken,
+        JSON.parse(latest.unit_ids || '[]'),
+        env
+      ).catch(e => console.log('Event sync error:', e.message));
+    }
+  } else if (member?.terrain_member_id) {
+    let unitIds = [];
+    try { unitIds = JSON.parse(member.unit_ids || '[]'); } catch(_) {}
+    await syncEventsFromTerrain(member.terrain_member_id, syncToken, unitIds, env)
+      .catch(e => console.log('Event sync error:', e.message));
+  }
+
+  // Push pending attendance to Terrain
+  await pushAttendanceToTerrain(syncToken, env);
+}
+
+// ── SYNC EVENTS FROM TERRAIN ──────────────────────────────────
+// Uses invitee_id from the events response for correct unit_id assignment
+async function syncEventsFromTerrain(terrainGuid, token, unitIds, env) {
+  try {
+    const res = await fetch(
+      `${TERRAIN_EVENTS}/members/${terrainGuid}/events`,
+      { headers: { Authorization: token } }
+    );
+    if (!res.ok) {
+      console.log('Events fetch failed:', res.status);
+      return;
+    }
+    const data   = await res.json();
+    const events = data.results || data.events || [];
+
+    const stmt = env.scouts_db.prepare(
+      `INSERT OR REPLACE INTO events
+       (id, title, start_datetime, end_datetime, location, status, challenge_area, description, unit_id, last_synced)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    );
+
+    const batch = events.map(e => {
+      // invitee_id is the correct unit UUID for this event — use it directly
+      const eventUnitId = e.invitee_id || e.unit_id || (unitIds[0] || null);
+      const status = new Date(e.end_datetime || e.start_datetime) < new Date()
+        ? 'concluded' : 'upcoming';
+
+      return stmt.bind(
+        e.id,
+        e.title || '',
+        e.start_datetime || '',
+        e.end_datetime   || '',
+        e.location       || '',
+        status,
+        e.challenge_area || '',
+        e.description    || '',
+        eventUnitId,
+      );
+    });
+
+    if (batch.length) await env.scouts_db.batch(batch);
+    console.log(`Synced ${batch.length} events for ${terrainGuid}`);
+  } catch(e) {
+    console.log('syncEventsFromTerrain error:', e.message);
+  }
+}
+
+// ── PUSH ATTENDANCE TO TERRAIN ────────────────────────────────
+async function pushAttendanceToTerrain(syncToken, env) {
   const pending = await env.scouts_db.prepare(
     `SELECT a.*, e.id as event_uuid, m.id as t_guid
      FROM attendance a
@@ -324,23 +568,6 @@ async function runSync(env, token) {
     return;
   }
 
-  // Group by event
-  const byEvent = {};
-  for (const row of pending.results) {
-    if (!byEvent[row.event_uuid]) byEvent[row.event_uuid] = [];
-    byEvent[row.event_uuid].push(row.t_guid);
-  }
-
-  let syncToken = token;
-
-  // Try to get a fresh token from auth_tokens
-  if (!syncToken) {
-    const latest = await env.scouts_db.prepare(
-      `SELECT token FROM auth_tokens WHERE expires_at > datetime('now') ORDER BY expires_at DESC LIMIT 1`
-    ).first();
-    syncToken = latest?.token || null;
-  }
-
   if (!syncToken) {
     await env.scouts_db.prepare(
       `INSERT INTO sync_log (status, detail) VALUES ('error', 'No valid token available for sync')`
@@ -348,26 +575,29 @@ async function runSync(env, token) {
     return;
   }
 
+  // Group by event
+  const byEvent = {};
+  for (const row of pending.results) {
+    if (!byEvent[row.event_uuid]) byEvent[row.event_uuid] = [];
+    byEvent[row.event_uuid].push(row.t_guid);
+  }
+
   let synced = 0;
   let errors = 0;
 
   for (const [eventId, guids] of Object.entries(byEvent)) {
     try {
-      const res = await fetch(`https://events.terrain.scouts.com.au/events/${eventId}`, {
-        method: 'PATCH',
+      const res = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, {
+        method:  'PATCH',
         headers: { Authorization: syncToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attendee_member_ids: guids, participant_member_ids: guids }),
+        body:    JSON.stringify({ attendee_member_ids: guids, participant_member_ids: guids }),
       });
 
       if (res.ok || res.status === 204) {
         await env.scouts_db.prepare(
           `UPDATE attendance SET synced_to_terrain = 1
-           WHERE event_id = ? AND member_id IN (
-             SELECT a.member_id FROM attendance a
-             JOIN members m ON m.id = a.member_id
-             WHERE a.event_id = ? AND m.id IN (${guids.map(() => '?').join(',')})
-           )`
-        ).bind(eventId, eventId, ...guids).run();
+           WHERE event_id = ? AND member_id IN (${guids.map(() => '?').join(',')})`
+        ).bind(eventId, ...guids).run();
         synced += guids.length;
       } else {
         errors++;
@@ -390,49 +620,40 @@ async function handleChat(path, method, request, url, env, member) {
   const parts = path.split('/').filter(Boolean); // ['chat', 'channels', ...]
 
   // GET /chat/channels
-  if (parts[1] === 'channels' && method === 'GET' && parts.length === 2) {
+  if (parts[1] === 'channels' && method === 'GET' && parts.length === 2)
     return getChatChannels(env, member);
-  }
 
-  // POST /chat/channels — create channel
-  if (parts[1] === 'channels' && method === 'POST' && parts.length === 2) {
+  // POST /chat/channels
+  if (parts[1] === 'channels' && method === 'POST' && parts.length === 2)
     return createChannel(request, env, member);
-  }
 
   // GET /chat/channels/:id/messages
-  if (parts[1] === 'channels' && parts[3] === 'messages' && method === 'GET') {
+  if (parts[1] === 'channels' && parts[3] === 'messages' && method === 'GET')
     return getMessages(parts[2], request, url, env, member);
-  }
 
-  // POST /chat/channels/:id/messages — send message
-  if (parts[1] === 'channels' && parts[3] === 'messages' && method === 'POST') {
+  // POST /chat/channels/:id/messages
+  if (parts[1] === 'channels' && parts[3] === 'messages' && method === 'POST')
     return sendMessage(parts[2], request, env, member);
-  }
 
   // POST /chat/channels/:id/archive
-  if (parts[1] === 'channels' && parts[3] === 'archive' && method === 'POST') {
+  if (parts[1] === 'channels' && parts[3] === 'archive' && method === 'POST')
     return archiveChannel(parts[2], env, member);
-  }
 
   // GET /chat/flags
-  if (parts[1] === 'flags' && method === 'GET' && parts.length === 2) {
+  if (parts[1] === 'flags' && method === 'GET' && parts.length === 2)
     return getFlags(env, member);
-  }
 
   // POST /chat/flags/:id/review
-  if (parts[1] === 'flags' && parts[3] === 'review' && method === 'POST') {
+  if (parts[1] === 'flags' && parts[3] === 'review' && method === 'POST')
     return reviewFlag(parts[2], env, member);
-  }
 
   // POST /chat/supervisors/:memberId
-  if (parts[1] === 'supervisors' && method === 'POST') {
+  if (parts[1] === 'supervisors' && method === 'POST')
     return addSupervisor(parts[2], env, member);
-  }
 
   // DELETE /chat/supervisors/:memberId
-  if (parts[1] === 'supervisors' && method === 'DELETE') {
+  if (parts[1] === 'supervisors' && method === 'DELETE')
     return removeSupervisor(parts[2], env, member);
-  }
 
   return err('Chat route not found', 404);
 }
@@ -492,13 +713,8 @@ async function createChannel(request, env, member) {
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).bind(channelId, name, description || '', type, member.unit_id, is_finite ? 1 : 0, senderId).run();
 
-  // Build member list — always include the creator
-  const allMemberIds = [...new Set([
-    ...(member_ids || []),
-    senderId,
-  ])];
+  const allMemberIds = [...new Set([...(member_ids || []), senderId])];
 
-  // Direct channels: always add all supervisors (Two Present Leadership)
   if (type === 'direct') {
     const supervisorRows = await env.scouts_db.prepare(
       `SELECT member_id FROM supervisors`
@@ -506,7 +722,6 @@ async function createChannel(request, env, member) {
     supervisorRows.results.forEach(s => allMemberIds.push(s.member_id));
   }
 
-  // Unit channels: add all active members in the unit
   if (type === 'unit') {
     const unitMembers = await env.scouts_db.prepare(
       `SELECT id FROM members WHERE unit_id = ? AND status = 'active'`
@@ -549,13 +764,12 @@ async function getMessages(channelId, request, url, env, member) {
     ).bind(channelId, limit).all();
   }
 
-  const messages = rows.results.reverse(); // chronological
+  const messages = rows.results.reverse();
 
   const channel = await env.scouts_db.prepare(
     `SELECT * FROM channels WHERE id = ?`
   ).bind(channelId).first();
 
-  // members.id IS the Terrain GUID (TEXT PRIMARY KEY) — join directly
   const membersRows = await env.scouts_db.prepare(
     `SELECT cm.member_id, m.first_name, m.last_name, m.role
      FROM channel_members cm
@@ -588,7 +802,6 @@ async function sendMessage(channelId, request, env, member) {
      VALUES (?, ?, ?, ?, ?, ?)`
   ).bind(messageId, channelId, senderId, senderName, senderRole, content.trim()).run();
 
-  // Keyword flag scan
   try {
     const keywords = await env.scouts_db.prepare(
       `SELECT keyword, severity FROM keyword_flags`
@@ -653,7 +866,7 @@ async function reviewFlag(flagId, env, member) {
 
 // ── CHANNEL ACCESS CHECK ──────────────────────────────────────
 async function checkChannelAccess(channelId, env, member) {
-  if (isSupervisor(member)) return true; // leaders see all
+  if (isSupervisor(member)) return true;
   const senderId = member.terrain_member_id || member.member_id;
   const row = await env.scouts_db.prepare(
     `SELECT 1 FROM channel_members WHERE channel_id = ? AND member_id = ?`
