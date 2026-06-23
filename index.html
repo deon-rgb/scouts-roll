@@ -1364,60 +1364,130 @@ async function loadMemberBadges(memberId, memberName) {
     });
     if (!res.ok) { renderBadgePlaceholder(memberName); return; }
     const data = await res.json();
-    renderBadgeDashboard(data, memberName);
+    if (!data.results || !data.results.length) { renderBadgePlaceholder(memberName); return; }
+    renderBadgeDashboard(data.results, memberName);
   } catch(e) {
     renderBadgePlaceholder(memberName);
   }
 }
 
 function renderBadgePlaceholder(name) {
-  document.getElementById('badge-section').textContent = 'Scouts';
+  document.getElementById('badge-section').textContent = '';
   document.getElementById('badge-content').innerHTML =
     '<div class="next-badge-card">' +
-    '<h3>What you need right now</h3>' +
-    '<p>Badge data syncs automatically each night.<br>Check back after midnight for your progress!</p>' +
+    '<h3>No achievements found</h3>' +
+    '<p>No badge progress found for this member in Terrain.</p>' +
     '<div class="next-actions">Keep attending meetings and completing activities in Terrain ✓</div>' +
     '</div>';
 }
 
-function renderBadgeDashboard(data, memberName) {
-  const achievements = data.achievements || [];
-  const member       = data.member || {};
-  const oasItems     = achievements.filter(function(a) { return a.type === 'oas'; });
-  const milestones   = achievements.filter(function(a) { return a.type === 'milestone'; });
+function renderBadgeDashboard(achievements, memberName) {
+  // Terrain types: outdoor_adventure_skill, milestone, special_interest_area,
+  // adventurous_journey, intro_section, intro_scouting, course_reflection,
+  // personal_reflection, additional_award, peak_award
 
+  const oasItems   = achievements.filter(function(a) { return a.type === 'outdoor_adventure_skill'; });
+  const milestones = achievements.filter(function(a) { return a.type === 'milestone'; });
+  const siaItems   = achievements.filter(function(a) { return a.type === 'special_interest_area'; });
+  const ajItems    = achievements.filter(function(a) { return a.type === 'adventurous_journey'; });
+  const peakAwards = achievements.filter(function(a) { return a.type === 'peak_award' && a.status === 'awarded'; });
+
+  // Derive section from milestone or OAS data
+  const sectionAch = milestones[0] || oasItems[0];
+  const section    = sectionAch?.achievement_meta?.section || '';
   document.getElementById('badge-section').textContent =
-    (member.section || 'scout').charAt(0).toUpperCase() + (member.section || 'scout').slice(1) + ' Unit';
-
-  const oasMap = {};
-  oasItems.forEach(function(a) {
-    if (!oasMap[a.stream]) oasMap[a.stream] = {};
-    oasMap[a.stream][a.stage] = a.status;
-  });
+    section ? section.charAt(0).toUpperCase() + section.slice(1) + ' Unit' : '';
 
   let html = '';
-  if (!milestones.length) {
-    html += '<div class="next-badge-card"><h3>Currently working towards</h3>' +
-      '<p>Start your first Milestone by completing activities in each challenge area.</p></div>';
+
+  // Peak award
+  if (peakAwards.length) {
+    html += '<div class="next-badge-card" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000">' +
+      '<h3>🏆 ' + peakAwards.map(function(a) { return a.achievement_meta?.peak_award || 'Peak Award'; }).join(', ') + '</h3>' +
+      '<p>Awarded</p></div>';
   }
 
-  if (Object.keys(oasMap).length > 0) {
+  // Milestones
+  if (milestones.length) {
+    html += '<div class="section-label">Milestones</div>';
+    milestones.sort(function(a, b) {
+      return (a.achievement_meta?.stage || 0) - (b.achievement_meta?.stage || 0);
+    }).forEach(function(m) {
+      const stage    = m.achievement_meta?.stage || '?';
+      const status   = m.status || '';
+      const awarded  = status === 'awarded';
+      const inProg   = status === 'in_progress' || status === 'draft_review' || status === 'feedback_review';
+      const dot      = awarded ? '✅' : inProg ? '🔄' : '⬜';
+      const eventCnt = m.event_count ? (
+        'Community: ' + (m.event_count.participant?.community || 0) +
+        ' | Creative: ' + (m.event_count.participant?.creative || 0) +
+        ' | Outdoors: ' + (m.event_count.participant?.outdoors || 0) +
+        ' | Personal: ' + (m.event_count.participant?.personal_growth || 0)
+      ) : '';
+      html += '<div class="milestone-card">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="font-size:20px">' + dot + '</span>' +
+        '<div><strong>Milestone ' + stage + '</strong>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + (eventCnt || status) + '</div>' +
+        '</div></div></div>';
+    });
+  }
+
+  // OAS
+  if (oasItems.length) {
+    // Build map: stream → { stage → status }
+    const oasMap = {};
+    oasItems.forEach(function(a) {
+      const stream = a.achievement_meta?.stream;
+      const stage  = a.achievement_meta?.stage;
+      if (!stream || !stage) return;
+      if (!oasMap[stream]) oasMap[stream] = {};
+      oasMap[stream][stage] = a.status;
+    });
+
     html += '<div class="section-label">Outdoor Adventure Skills</div><div class="oas-grid">';
-    Object.keys(oasMap).forEach(function(stream) {
-      const info  = OAS_STREAMS[stream] || { name: stream, icon: '🏕️', maxStage: 5 };
-      const dots  = Array.from({length: info.maxStage}, function(_, i) {
+    Object.keys(oasMap).sort().forEach(function(stream) {
+      const info  = OAS_STREAMS[stream] || { name: stream.replace(/_/g, ' '), icon: '🏕️', maxStage: 5 };
+      const maxStage = Math.max(info.maxStage, Math.max(...Object.keys(oasMap[stream]).map(Number)));
+      const dots  = Array.from({length: maxStage}, function(_, i) {
         const stage  = i + 1;
-        const status = oasMap[stream][stage];
-        const cls    = status === 'awarded' ? 'awarded' : status === 'pending' ? 'pending' : 'empty';
+        const status = oasMap[stream][stage] || '';
+        const cls    = status === 'awarded' ? 'awarded'
+                     : (status === 'in_progress' || status === 'draft_review' || status === 'feedback_review') ? 'pending'
+                     : 'empty';
         return '<div class="stage-dot ' + cls + '">' + stage + '</div>';
       }).join('');
-      html += '<div class="oas-stream"><div class="oas-stream-name">' + info.icon + ' ' + info.name + '</div>' +
+      html += '<div class="oas-stream">' +
+        '<div class="oas-stream-name">' + info.icon + ' ' + info.name + '</div>' +
         '<div class="oas-stage-dots">' + dots + '</div></div>';
     });
     html += '</div>';
-  } else {
-    html += '<div class="milestone-card"><h3>🏕️ Outdoor Adventure Skills</h3>' +
-      '<p style="font-size:14px;color:var(--text-muted)">No OAS progress yet. Try camping, bushwalking, or another outdoor activity!</p></div>';
+  }
+
+  // SIA
+  if (siaItems.length) {
+    const awarded = siaItems.filter(function(a) { return a.status === 'awarded'; });
+    const inProg  = siaItems.filter(function(a) { return a.status !== 'awarded'; });
+    html += '<div class="section-label">Special Interest Areas</div>';
+    if (awarded.length) {
+      html += '<div class="milestone-card">✅ Awarded: ' +
+        awarded.map(function(a) { return a.achievement_meta?.sia_area || 'SIA'; }).join(', ') + '</div>';
+    }
+    if (inProg.length) {
+      html += '<div class="milestone-card">🔄 In progress: ' +
+        inProg.map(function(a) { return a.achievement_meta?.sia_area || 'SIA'; }).join(', ') + '</div>';
+    }
+  }
+
+  // AJ
+  if (ajItems.length) {
+    const awarded = ajItems.filter(function(a) { return a.status === 'awarded'; }).length;
+    html += '<div class="section-label">Adventurous Journey</div>' +
+      '<div class="milestone-card">' + (awarded ? '✅ ' + awarded + ' completed' : '🔄 In progress') + '</div>';
+  }
+
+  if (!html) {
+    html = '<div class="next-badge-card"><p>No badge progress to display yet.</p></div>';
   }
 
   document.getElementById('badge-content').innerHTML = html;
