@@ -1803,13 +1803,8 @@ async function doSaveRoll() {
     return;
   }
 
-  const isConcluded  = state.currentEvent?.status === 'concluded';
   const presentCount = Object.values(state.attendance).filter(Boolean).length;
-  const msg = isConcluded
-    ? `Save corrected roll for ${state.currentEvent.title}?\n\n${presentCount} of ${state.members.length} members present.\n\nThis will update the record in Terrain.`
-    : `Save roll for ${state.currentEvent.title}?\n\n${presentCount} of ${state.members.length} members present.\n\nThis will sync to Terrain tonight.`;
-
-  const confirmed = confirm(msg);
+  const confirmed = confirm(`Save roll for ${state.currentEvent.title}?\n\n${presentCount} of ${state.members.length} members present.`);
   if (!confirmed) return;
 
   const btn = document.getElementById('btn-save-roll');
@@ -1831,15 +1826,23 @@ async function doSaveRoll() {
       throw new Error(errData.error || 'Save failed');
     }
 
+    const data = await res.json();
     const d = new Date(state.currentEvent.start_datetime);
+
+    let syncLine = '✅ Saved to Terrain';
+    if (data.terrain_status === 'locked') {
+      syncLine = '⚠️ Saved locally — ' + (data.terrain_error || 'Event locked in Terrain');
+    } else if (data.terrain_status === 'error') {
+      syncLine = '⚠️ Saved locally — Terrain push failed, will retry tonight';
+    }
+
     document.getElementById('success-detail').innerHTML = `
       <div><span class="lbl">Event</span>${state.currentEvent.title}</div>
       <div><span class="lbl">Date</span>${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long'})}</div>
       <div><span class="lbl">Present</span>${presentIds.length} of ${state.members.length} members</div>
-      <div><span class="lbl">Syncing</span>Tonight's nightly sync</div>
+      <div><span class="lbl">Status</span>${syncLine}</div>
     `;
 
-    // If we were editing a concluded event, switch back to view mode
     if (state.currentEvent?.status === 'concluded') {
       state.rollEditMode = false;
     }

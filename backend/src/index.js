@@ -141,7 +141,25 @@ export default {
         memberProfile = { error: e.message };
       }
 
-      return json({ tokenRow, eventCount, memberCount, calendarsRaw, calendarsKnown, memberProfile });
+      // Fetch a concluded event to see attendance structure
+      let sampleEvent = null;
+      try {
+        const evRow = await env.scouts_db.prepare(
+          `SELECT id FROM events WHERE status = 'concluded' LIMIT 1`
+        ).first();
+        if (evRow) {
+          const evRes = await fetch(
+            `https://events.terrain.scouts.com.au/events/${evRow.id}`,
+            { headers: { Authorization: token } }
+          );
+          const evText = await evRes.text();
+          sampleEvent = { id: evRow.id, status: evRes.status, raw: evText.slice(0, 800) };
+        }
+      } catch(e) {
+        sampleEvent = { error: e.message };
+      }
+
+      return json({ tokenRow, eventCount, memberCount, calendarsRaw, calendarsKnown, memberProfile, sampleEvent });
     }
 
     return err('Not found', 404);
@@ -423,13 +441,56 @@ async function handleGetMembers(env, member) {
 
 // ── GET ATTENDANCE ────────────────────────────────────────────
 async function handleGetAttendance(eventId, env, member) {
+  // Check local DB first
   const rows = await env.scouts_db.prepare(
     `SELECT member_id, attended FROM attendance WHERE event_id = ?`
   ).bind(eventId).all();
-  return json({ results: rows.results });
+
+  // If we have local records, return them
+  if (rows.results.length > 0) {
+    return json({ results: rows.results });
+  }
+
+  // No local records — fetch from Terrain and cache them
+  const token = member.token;
+  if (!token) return json({ results: [] });
+
+  try {
+    const evRes = await fetch(
+      `${TERRAIN_EVENTS}/events/${eventId}`,
+      { headers: { Authorization: token } }
+    );
+    if (!evRes.ok) return json({ results: [] });
+
+    const evData = await evRes.json();
+    const participants = evData.attendance?.participant_members || [];
+    const attendees    = evData.attendance?.attendee_members   || [];
+
+    // Combine both arrays, dedupe by id
+    const allAttended = [...new Map(
+      [...participants, ...attendees].map(p => [p.id, p])
+    ).values()];
+
+    if (allAttended.length > 0) {
+      const stmt = env.scouts_db.prepare(
+        `INSERT OR IGNORE INTO attendance (event_id, member_id, attended, synced_to_terrain)
+         VALUES (?, ?, 1, 1)`
+      );
+      await env.scouts_db.batch(allAttended.map(p => stmt.bind(eventId, p.id)));
+    }
+
+    return json({
+      results: allAttended.map(p => ({ member_id: p.id, attended: 1 }))
+    });
+  } catch(e) {
+    console.log('Terrain attendance fetch error:', e.message);
+    return json({ results: [] });
+  }
 }
 
 // ── SAVE ATTENDANCE ───────────────────────────────────────────
+// Saves locally and immediately pushes to Terrain.
+// Returns terrain_status so the frontend can show locked event warnings.
 async function handleSaveAttendance(eventId, request, env, member) {
   const { present_ids } = await request.json();
   if (!Array.isArray(present_ids)) return err('present_ids must be an array');
@@ -445,31 +506,74 @@ async function handleSaveAttendance(eventId, request, env, member) {
 
   const presentSet = new Set(present_ids);
 
+  // Save locally first
   const stmt = env.scouts_db.prepare(
     `INSERT OR REPLACE INTO attendance (event_id, member_id, attended, synced_to_terrain)
      VALUES (?, ?, ?, 0)`
   );
-
   const batch = allMembers.results.map(m =>
     stmt.bind(eventId, m.id, presentSet.has(m.id) ? 1 : 0)
   );
-
   if (batch.length) await env.scouts_db.batch(batch);
 
-  return json({ success: true });
+  // Push immediately to Terrain
+  const token = member.token;
+  let terrainStatus = 'unknown';
+  let terrainError  = null;
+
+  try {
+    const res = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, {
+      method:  'PATCH',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        attendee_member_ids:     present_ids,
+        participant_member_ids:  present_ids,
+      }),
+    });
+
+    if (res.ok || res.status === 204) {
+      terrainStatus = 'synced';
+      // Mark as synced in local DB
+      await env.scouts_db.prepare(
+        `UPDATE attendance SET synced_to_terrain = 1 WHERE event_id = ? AND member_id IN (${present_ids.map(() => '?').join(',')})`
+      ).bind(eventId, ...present_ids).run().catch(() => {});
+    } else if (res.status === 403 || res.status === 422) {
+      terrainStatus = 'locked';
+      terrainError  = 'This event is locked in Terrain. You may need to reopen it there first.';
+    } else {
+      terrainStatus = 'error';
+      terrainError  = `Terrain returned ${res.status}`;
+    }
+  } catch(e) {
+    terrainStatus = 'error';
+    terrainError  = e.message;
+  }
+
+  await env.scouts_db.prepare(
+    `INSERT INTO sync_log (status, detail) VALUES (?, ?)`
+  ).bind(terrainStatus === 'synced' ? 'ok' : 'error',
+    `Attendance save for ${eventId}: ${terrainStatus}${terrainError ? ' — ' + terrainError : ''}`
+  ).run();
+
+  return json({ success: true, terrain_status: terrainStatus, terrain_error: terrainError });
 }
 
 // ── SYNC ──────────────────────────────────────────────────────
 async function handleSync(request, env, member) {
   if (!isSupervisor(member)) return err('Leaders only', 403);
 
-  // Also sync events from Terrain
-  const token = member.token || null;
-  await runFullSync(env, token, member);
-  return json({ success: true });
+  try {
+    const token = member.token || null;
+    await runFullSync(env, token, member);
+    return json({ success: true });
+  } catch(e) {
+    return json({ success: false, error: e.message });
+  }
 }
 
-// ── FULL SYNC (attendance + events) ──────────────────────────
+// ── NIGHTLY SYNC ─────────────────────────────────────────────
+// Slim retry queue — only retries attendance records that failed to push live.
+// Event and member syncs now happen on-demand (at login / event open).
 async function runSync(env, token) {
   await runFullSync(env, token, null);
 }
@@ -479,28 +583,13 @@ async function runFullSync(env, token, member) {
 
   if (!syncToken) {
     const latest = await env.scouts_db.prepare(
-      `SELECT token, terrain_member_id, unit_ids FROM auth_tokens
+      `SELECT token FROM auth_tokens
        WHERE expires_at > datetime('now') ORDER BY expires_at DESC LIMIT 1`
     ).first();
     syncToken = latest?.token || null;
-
-    // Also sync events while we have the token and terrain GUID
-    if (syncToken && latest?.terrain_member_id) {
-      await syncEventsFromTerrain(
-        latest.terrain_member_id,
-        syncToken,
-        JSON.parse(latest.unit_ids || '[]'),
-        env
-      ).catch(e => console.log('Event sync error:', e.message));
-    }
-  } else if (member?.terrain_member_id) {
-    let unitIds = [];
-    try { unitIds = JSON.parse(member.unit_ids || '[]'); } catch(_) {}
-    await syncEventsFromTerrain(member.terrain_member_id, syncToken, unitIds, env)
-      .catch(e => console.log('Event sync error:', e.message));
   }
 
-  // Push pending attendance to Terrain
+  // Retry any attendance that didn't make it to Terrain
   await pushAttendanceToTerrain(syncToken, env);
 }
 
@@ -546,6 +635,8 @@ async function syncEventsFromTerrain(terrainGuid, token, unitIds, env) {
 
     if (batch.length) await env.scouts_db.batch(batch);
     console.log(`Synced ${batch.length} events for ${terrainGuid}`);
+
+
   } catch(e) {
     console.log('syncEventsFromTerrain error:', e.message);
   }
