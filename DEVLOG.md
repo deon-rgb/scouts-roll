@@ -362,3 +362,21 @@ Key discoveries:
 - Badge dashboard UX/design pass needed
 - Chat end-to-end test
 - Nightly retry queue uses old PATCH format — needs same fix applied to `pushAttendanceToTerrain`
+
+---
+
+## Session log: 2026-06-27
+
+**Attendance PATCH to Terrain now fully working.**
+
+Root cause: Terrain requires the complete event object in the PATCH body — not just attendance fields. Fix: GET the full event first, update only the attendance fields, then PATCH the whole object back.
+
+Key discoveries:
+1. Terrain's own UI sends the entire event object in its PATCH
+2. review field is required — sending without it returns 400
+3. attendee_member_ids and participant_member_ids should be the same list
+4. Finalised events don't need an unlock API call — Edit button is purely local UI state
+5. Terrain UI caches aggressively — navigate away and back to see updated attendance
+
+Attendance sync confirmed working end to end. Outstanding: two-way sync, badge UX, chat test, fix nightly retry queue to use same PATCH format.
+
