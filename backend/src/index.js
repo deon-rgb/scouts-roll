@@ -467,17 +467,49 @@ async function handleSaveAttendance(eventId, request, env, member) {
   if (batch.length) await env.scouts_db.batch(batch);
 
   // Push immediately to Terrain
+  // Terrain requires the full event object in PATCH — GET it first, then send back
+  // with only the attendance fields changed.
   let terrainStatus = 'unknown';
   let terrainError  = null;
 
   try {
+    // GET full event from Terrain
+    const evRes = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, { headers: { Authorization: member.token } });
+    if (!evRes.ok) throw new Error(`Could not fetch event: ${evRes.status}`);
+    const evData = await evRes.json();
+
+    // Build PATCH body — send full event back with attendance updated
+    const patchBody = {
+      title:                            evData.title || '',
+      description:                      evData.description || '',
+      justification:                    evData.justification || '',
+      additional_notes:                 evData.additional_notes || '',
+      location:                         evData.location || '',
+      start_datetime:                   evData.start_datetime,
+      end_datetime:                     evData.end_datetime,
+      challenge_area:                   evData.challenge_area || '',
+      iana_timezone:                    evData.iana_timezone || 'Australia/Melbourne',
+      status:                           evData.status || 'concluded',
+      equipment_notes:                  evData.equipment_notes || '',
+      schedule_items:                   evData.schedule_items || [],
+      uploads:                          evData.uploads || [],
+      organisers:                       (evData.organisers || []).map(o => typeof o === 'string' ? o : o.id),
+      event_type:                       evData.event_type,
+      review:                           evData.review || {},
+      achievement_pathway_oas_data:     evData.achievement_pathway_oas_data || {},
+      achievement_pathway_logbook_data: evData.achievement_pathway_logbook_data || {},
+      attendance: {
+        leader_member_ids:    evData.attendance?.leader_member_ids    || [],
+        assistant_member_ids: evData.attendance?.assistant_member_ids || [],
+        attendee_member_ids:    present_ids,
+        participant_member_ids: present_ids,
+      },
+    };
+
     const res = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, {
       method:  'PATCH',
       headers: { Authorization: member.token, 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        attendee_member_ids:    present_ids,
-        participant_member_ids: present_ids,
-      }),
+      body:    JSON.stringify(patchBody),
     });
 
     if (res.ok || res.status === 204) {
