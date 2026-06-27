@@ -380,3 +380,40 @@ Key discoveries:
 
 Attendance sync confirmed working end to end. Outstanding: two-way sync, badge UX, chat test, fix nightly retry queue to use same PATCH format.
 
+
+---
+
+## Session log: 2026-06-27 (continued)
+
+**Chat confirmed working end to end.**
+
+- Role assignment fixed — youth members get role:member from Terrain duty field, leaders get role:leader
+- Consent gate working — youth blocked with 403 until chat_consent=1 set on their member record
+- Two-way messaging confirmed —
+cd ~/scouts-roll && cat >> DEVLOG.md << 'EOF'
+
+---
+
+## Session log: 2026-06-27 (continued)
+
+**Chat confirmed working end to end.**
+
+- Role assignment fixed — youth members get role:member from Terrain duty field, leaders get role:leader
+- Consent gate working — youth blocked with 403 until chat_consent=1 set on their member record
+- Two-way messaging confirmed — messages appear correctly on left/right for each user
+- Leader messages labelled "· Leader" for youth members
+- 2-year auto-delete added to nightly cron
+- No 1:1 adult-youth direct channel enforcement added
+- Chat screen width fixed on desktop
+
+**To do before youth chat launch:**
+- Parental consent process (form/policy)
+- Cloudflare DPA activation
+- Decision on data localisation
+- UI for leaders to manage consent (currently manual via wrangler)
+
+**Also fixed this session:**
+- Attendance two-way sync — always fetches from Terrain on event open
+- Nightly retry queue removed (redundant)
+- Clear All button on roll call not working (known bug, not yet fixed)
+
