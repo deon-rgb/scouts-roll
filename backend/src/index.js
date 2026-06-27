@@ -403,29 +403,36 @@ async function handleGetMembers(env, member) {
 }
 
 // ── GET ATTENDANCE ────────────────────────────────────────────
-// Checks local DB first; if no records, fetches live from Terrain and caches.
-// Only uses attendee_members (who actually attended), not participant_members (who was invited).
+// Always fetches live from Terrain — Terrain is the source of truth.
+// Local D1 is updated to match. This ensures changes made directly in Terrain
+// are always reflected in the app.
 async function handleGetAttendance(eventId, env, member) {
-  const rows = await env.scouts_db.prepare(
-    `SELECT member_id, attended FROM attendance WHERE event_id = ?`
-  ).bind(eventId).all();
-
-  if (rows.results.length > 0) return json({ results: rows.results });
-
-  // No local records — fetch from Terrain
   try {
     const evRes = await fetch(
       `${TERRAIN_EVENTS}/events/${eventId}`,
       { headers: { Authorization: member.token } }
     );
-    if (!evRes.ok) return json({ results: [] });
+
+    if (!evRes.ok) {
+      // Terrain unavailable — fall back to local cache
+      const rows = await env.scouts_db.prepare(
+        `SELECT member_id, attended FROM attendance WHERE event_id = ?`
+      ).bind(eventId).all();
+      return json({ results: rows.results, source: 'cache' });
+    }
 
     const evData    = await evRes.json();
     const attendees = evData.attendance?.attendee_members || [];
 
+    // Update local cache to match Terrain
+    // First clear existing records for this event, then insert fresh from Terrain
+    await env.scouts_db.prepare(
+      `DELETE FROM attendance WHERE event_id = ? AND synced_to_terrain = 1`
+    ).bind(eventId).run();
+
     if (attendees.length > 0) {
       const stmt = env.scouts_db.prepare(
-        `INSERT OR IGNORE INTO attendance (event_id, member_id, attended, synced_to_terrain)
+        `INSERT OR REPLACE INTO attendance (event_id, member_id, attended, synced_to_terrain)
          VALUES (?, ?, 1, 1)`
       );
       await env.scouts_db.batch(attendees.map(p => stmt.bind(eventId, p.id)));
@@ -434,7 +441,11 @@ async function handleGetAttendance(eventId, env, member) {
     return json({ results: attendees.map(p => ({ member_id: p.id, attended: 1 })) });
   } catch(e) {
     console.log('Terrain attendance fetch error:', e.message);
-    return json({ results: [] });
+    // Fall back to local cache on error
+    const rows = await env.scouts_db.prepare(
+      `SELECT member_id, attended FROM attendance WHERE event_id = ?`
+    ).bind(eventId).all();
+    return json({ results: rows.results, source: 'cache' });
   }
 }
 
@@ -629,10 +640,45 @@ async function pushAttendanceToTerrain(syncToken, env) {
 
   for (const [eventId, guids] of Object.entries(byEvent)) {
     try {
+      // Fetch full event first (required by Terrain — must send complete object)
+      let patchBody = { attendee_member_ids: guids, participant_member_ids: guids };
+      try {
+        const evRes = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, { headers: { Authorization: syncToken } });
+        if (evRes.ok) {
+          const evData = await evRes.json();
+          patchBody = {
+            title:                            evData.title || '',
+            description:                      evData.description || '',
+            justification:                    evData.justification || '',
+            additional_notes:                 evData.additional_notes || '',
+            location:                         evData.location || '',
+            start_datetime:                   evData.start_datetime,
+            end_datetime:                     evData.end_datetime,
+            challenge_area:                   evData.challenge_area || '',
+            iana_timezone:                    evData.iana_timezone || 'Australia/Melbourne',
+            status:                           evData.status || 'concluded',
+            equipment_notes:                  evData.equipment_notes || '',
+            schedule_items:                   evData.schedule_items || [],
+            uploads:                          evData.uploads || [],
+            organisers:                       (evData.organisers || []).map(o => typeof o === 'string' ? o : o.id),
+            event_type:                       evData.event_type,
+            review:                           evData.review || {},
+            achievement_pathway_oas_data:     evData.achievement_pathway_oas_data || {},
+            achievement_pathway_logbook_data: evData.achievement_pathway_logbook_data || {},
+            attendance: {
+              leader_member_ids:    evData.attendance?.leader_member_ids    || [],
+              assistant_member_ids: evData.attendance?.assistant_member_ids || [],
+              attendee_member_ids:    guids,
+              participant_member_ids: guids,
+            },
+          };
+        }
+      } catch(_) {}
+
       const res = await fetch(`${TERRAIN_EVENTS}/events/${eventId}`, {
         method:  'PATCH',
         headers: { Authorization: syncToken, 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ attendee_member_ids: guids, participant_member_ids: guids }),
+        body:    JSON.stringify(patchBody),
       });
 
       if (res.ok || res.status === 204) {
