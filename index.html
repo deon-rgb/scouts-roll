@@ -1832,10 +1832,13 @@ async function loadEvents() {
     state.events = data.results || [];
     renderHomeEvents();
     renderRollEvents();
-    document.getElementById('home-events-count').textContent = state.events.length;
+    const countEl = document.getElementById('home-events-count');
+    if (countEl) countEl.textContent = state.events.length;
   } catch(e) {
-    document.getElementById('home-events-list').innerHTML =
-      `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+    const errEl = document.getElementById('home-events-list');
+    if (errEl) errEl.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+    const listEl = document.getElementById('roll-events-list');
+    if (listEl) listEl.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
   }
 }
 
@@ -1847,13 +1850,15 @@ async function loadMembers() {
     });
     const data = await res.json();
     state.members = data.results || [];
-    document.getElementById('home-members-count').textContent = state.members.length;
+    const membCountEl = document.getElementById('home-members-count');
+    if (membCountEl) membCountEl.textContent = state.members.length;
   } catch(_) {}
 }
 
 // ── RENDER HOME ───────────────────────────────────────────────
 function renderHomeEvents() {
   const list   = document.getElementById('home-events-list');
+  if (!list) return; // home screen no longer has this element
   const recent = state.events.slice(0, 5);
 
   if (!recent.length) {
