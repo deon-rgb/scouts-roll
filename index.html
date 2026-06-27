@@ -658,10 +658,6 @@
 
 <!-- ROLL TAB -->
 <div id="screen-roll-list" class="screen">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <button class="btn-back" onclick="showTab('home')">←</button>
-    <span style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Roll Call</span>
-  </div>
   <div style="padding: 0 0 12px 0;">
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px">Unit</label>
     <select id="unit-selector" onchange="onUnitChange()" style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236B7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:16px;cursor:pointer;">
@@ -700,7 +696,7 @@
   <div id="member-list"></div>
   <div style="height:160px"></div>
   <div class="save-bar">
-    <button class="btn-back" onclick="showTab('roll')">←</button>
+    <button class="btn-back" onclick="goBack()">←</button>
     <button class="btn btn-primary" id="btn-save-roll" onclick="doSaveRoll()">Save to Terrain</button>
   </div>
 </div>
@@ -710,7 +706,7 @@
   <div class="success-card">
     <div class="success-icon">🎉</div>
     <h2>Roll saved!</h2>
-    <p>Attendance saved to Terrain.</p>
+    <p>Attendance queued to sync to Terrain tonight.</p>
     <div class="success-detail" id="success-detail"></div>
     <button class="btn btn-primary" onclick="showTab('roll')" style="margin-top:4px">Back to events</button>
   </div>
@@ -763,10 +759,6 @@
 
 <!-- BADGE DASHBOARD SCREEN -->
 <div id="screen-badges" class="screen">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <button class="btn-back" onclick="showScreen('badge-members')">←</button>
-    <span style="font-size:13px;font-weight:700;color:var(--text-muted)">Badge Progress</span>
-  </div>
   <div class="hero-card" style="margin-bottom:16px">
     <div class="hero-greeting">Badge Progress</div>
     <div class="hero-name" id="badge-member-name">Loading…</div>
@@ -780,10 +772,7 @@
 
 <!-- MEMBER LIST FOR BADGES (leader view) -->
 <div id="screen-badge-members" class="screen">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <button class="btn-back" onclick="showTab('badges')">←</button>
-    <span style="font-size:13px;font-weight:700;color:var(--text-muted)">Select a member</span>
-  </div>
+  <div class="section-label">Select a member</div>
   <div id="badge-member-list"></div>
 </div>
 
@@ -812,9 +801,9 @@
 <div id="screen-chat-view" class="chat-screen">
   <div class="chat-header">
     <button class="chat-back" onclick="closeChatView()">←</button>
-    <div style="flex:1;min-width:0;overflow:hidden">
-      <h2 id="chat-view-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Channel</h2>
-      <p id="chat-view-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+    <div style="flex:1;min-width:0">
+      <h2 id="chat-view-title">Channel</h2>
+      <p id="chat-view-meta"></p>
     </div>
     <div id="chat-view-badges"></div>
   </div>
@@ -1951,25 +1940,77 @@ async function doSaveRoll() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────
+// ── NAVIGATION WITH HISTORY API ──────────────────────────────
+// Tracks screen history so browser/device back button works within the app.
+
+const NAV_STACK = [];
+
 function showTab(tab) {
-  // Update nav
+  // Tab bar navigation resets the stack
+  NAV_STACK.length = 0;
+
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav-' + tab);
   if (navEl) navEl.classList.add('active');
 
-  const screenMap = { home: 'home', roll: 'roll-list', profile: 'profile', chat: 'chat', badges: 'badges' };
-  showScreen(screenMap[tab] || tab);
+  const screenMap = { home: 'home', roll: 'roll-list', profile: 'profile', chat: 'chat', badges: 'badge-members' };
+  const screen = screenMap[tab] || tab;
+
+  _showScreen(screen);
+  history.pushState({ screen, tab }, '', '');
 
   if (tab === 'chat')   loadChannels();
   if (tab === 'badges') loadBadgesTab();
 }
 
 function showScreen(name) {
+  NAV_STACK.push(name);
+  _showScreen(name);
+  history.pushState({ screen: name }, '', '');
+}
+
+function _showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + name);
   if (el) el.classList.add('active');
   window.scrollTo(0, 0);
 }
+
+function goBack() {
+  // Pop current screen, go to previous
+  NAV_STACK.pop();
+  const prev = NAV_STACK[NAV_STACK.length - 1];
+  if (prev) {
+    _showScreen(prev);
+  } else {
+    // Nothing in stack — go to home tab
+    showTab('home');
+  }
+}
+
+// Intercept browser/device back button
+window.addEventListener('popstate', (e) => {
+  // If chat view is open, close it first
+  const chatView = document.getElementById('screen-chat-view');
+  if (chatView && chatView.classList.contains('active')) {
+    closeChatView();
+    return;
+  }
+
+  // Navigate back within app
+  if (NAV_STACK.length > 1) {
+    NAV_STACK.pop();
+    const prev = NAV_STACK[NAV_STACK.length - 1];
+    _showScreen(prev);
+    history.pushState({ screen: prev }, '', '');
+  } else {
+    // At root — push state again to prevent app exit
+    history.pushState({}, '', '');
+  }
+});
+
+// Push initial state so back button is interceptable from the start
+history.pushState({}, '', '');
 
 // ── LOGOUT ────────────────────────────────────────────────────
 function handleTokenExpiry() {
