@@ -490,3 +490,33 @@ cd ~/scouts-roll && cat >> DEVLOG.md << 'EOF'
 - Events filtered correctly per section
 - Section colour coding working
 
+
+---
+
+## Session log: 2026-06-27 (closing)
+
+**Program info on roll call screen:**
+- Challenge area badge now shows on event header (🎨 Creative etc)
+- Description shows if populated in Terrain
+- Both pulled from existing D1 events table (no extra API call needed)
+
+**Roll call section picker — fully working:**
+- Root cause of missing sections fixed: unit_ids not saved to localStorage session
+- All 4 sections displaying correctly with colour-coded date blocks
+
+**Key architectural decisions made today:**
+- App is a companion to Terrain, not a replacement
+- Leaders must enter programs in Terrain in advance (no quick-create form needed)
+- Two-way attendance sync confirmed working
+- Chat: build our own with proper controls
+- Data sovereignty: Cloudflare DPA + policy docs needed before youth chat launch
+
+**Outstanding for next session:**
+1. Clear All button on roll call not working
+2. Back button on installed PWA (mobile)
+3. Badge dashboard UX/design pass
+4. Chat UX — channel name in header, channel management UI
+5. Parental consent UI for chat (currently manual via wrangler)
+6. Profile tab empty
+7. Home screen — next event card
+
