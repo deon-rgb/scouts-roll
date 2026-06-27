@@ -115,8 +115,61 @@
   .nav-icon { font-size: 22px; line-height: 1; }
 
   /* ── SCREENS ────────────────────────────────────────────── */
-  .screen { display: none; padding: 16px 16px 100px; max-width: 560px; margin: 0 auto; }
+  .screen { display: none; padding: 16px 16px 80px; max-width: 560px; margin: 0 auto; }
   .screen.active { display: block; }
+
+  /* ── HOME GRID ──────────────────────────────────────────── */
+  #screen-home { padding: 0; max-width: 100%; }
+
+  .home-header {
+    background: var(--navy); color: white;
+    padding: env(safe-area-inset-top, 0) 20px 24px;
+    padding-top: calc(env(safe-area-inset-top, 0) + 20px);
+  }
+  .home-greeting { font-size: 13px; opacity: 0.75; margin-bottom: 2px; }
+  .home-name { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .home-subtitle { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .home-tile {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 16px;
+    display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: space-between;
+    min-height: 120px;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1.5px solid var(--border);
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+    color: inherit;
+  }
+  .home-tile:active { transform: scale(0.97); box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+
+  .home-tile-icon { font-size: 32px; line-height: 1; margin-bottom: 8px; }
+  .home-tile-name { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .home-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .home-tile-badge {
+    background: var(--red); color: white;
+    border-radius: 10px; padding: 2px 7px;
+    font-size: 11px; font-weight: 700;
+    margin-top: 6px;
+  }
+
+  .home-tile.wide { grid-column: 1 / -1; min-height: 80px; flex-direction: row; align-items: center; gap: 16px; }
+  .home-tile.wide .home-tile-icon { margin-bottom: 0; font-size: 28px; }
+  .home-tile.wide .home-tile-content { flex: 1; }
 
   /* ── LOGIN ──────────────────────────────────────────────── */
   #screen-login {
@@ -477,9 +530,9 @@
 
   .chat-screen {
     display: none; flex-direction: column;
+    height: calc(100dvh - 65px); overflow: hidden;
     position: fixed; top: 0; left: 0; right: 0; bottom: 65px;
-    background: var(--bg); z-index: 250;
-    overflow: hidden;
+    background: var(--bg); z-index: 100;
   }
   .chat-screen.active { display: flex; }
 
@@ -635,24 +688,14 @@
 
 <!-- HOME TAB -->
 <div id="screen-home" class="screen">
-  <div class="hero-card">
-    <div class="hero-greeting">Good evening 👋</div>
-    <div class="hero-name" id="home-name">Loading…</div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="num" id="home-events-count">–</div>
-        <div class="lbl">events this term</div>
-      </div>
-      <div class="hero-stat">
-        <div class="num" id="home-members-count">–</div>
-        <div class="lbl">members</div>
-      </div>
-    </div>
+  <div class="home-header">
+    <div class="home-greeting" id="home-greeting">Good evening 👋</div>
+    <div class="home-name" id="home-name">Loading…</div>
+    <div class="home-subtitle" id="home-subtitle">Princes Park Scout Group</div>
   </div>
 
-  <div class="section-label">Recent meetings</div>
-  <div id="home-events-list">
-    <div class="loading-block"><div class="spinner dark"></div><p>Loading…</p></div>
+  <div class="home-grid" id="home-grid">
+    <!-- Tiles rendered by renderHomeTiles() based on role -->
   </div>
 </div>
 
@@ -730,28 +773,16 @@
 
 <!-- BOTTOM NAV (hidden on login) -->
 <nav class="bottom-nav" id="bottom-nav" style="display:none">
-  <div class="nav-item active" id="nav-home" onclick="showTab('home')">
-    <div class="nav-icon">🏠</div>
-    <span>Home</span>
-  </div>
-  <div class="nav-item" id="nav-roll" onclick="showTab('roll')">
-    <div class="nav-icon">✅</div>
-    <span>Roll</span>
-  </div>
-  <div class="nav-item" id="nav-badges" onclick="showTab('badges')">
-    <div class="nav-icon">🏅</div>
-    <span>Badges</span>
-  </div>
-  <div class="nav-item" id="nav-chat" onclick="showTab('chat')">
-    <div class="nav-icon">💬</div>
-    <span>Chat</span>
-    <span id="chat-badge" style="display:none;position:absolute;top:6px;right:calc(50% - 22px);background:#E74C3C;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700"></span>
-  </div>
-  <div class="nav-item" id="nav-profile" onclick="showTab('profile')">
-    <div class="nav-icon">👤</div>
-    <span>Profile</span>
-  </div>
+  <!-- Bottom nav replaced by home grid launcher -->
 </nav>
+
+<!-- Fixed back-to-home bar shown on all non-home screens -->
+<div id="back-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1.5px solid var(--border);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0));z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,0.06);">
+  <button onclick="showTab('home')" style="display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--navy);font-size:15px;font-weight:700;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;">
+    <span style="font-size:22px;line-height:1">←</span> Home
+  </button>
+</div>
+<span id="chat-badge" style="display:none"></span>
 
 
 
@@ -1603,7 +1634,7 @@ function enterApp() {
   // Update header
   document.getElementById('app-header').style.display = 'block';
   updateOnlineStatus(); // Check offline status
-  document.getElementById('bottom-nav').style.display = 'flex';
+  document.getElementById('bottom-nav').style.display = 'none'; // replaced by home grid
   // Hide login modal
   const loginModal = document.getElementById('login-modal');
   if (loginModal) loginModal.classList.remove('show');
@@ -1623,8 +1654,83 @@ function enterApp() {
   const unitSel = document.getElementById('unit-selector');
   if (unitSel && state.selectedUnitId) unitSel.value = state.selectedUnitId;
 
+  renderHomeTiles();
   showTab('home');
   loadData();
+}
+
+// ── HOME TILES ───────────────────────────────────────────────
+function renderHomeTiles() {
+  const grid  = document.getElementById('home-grid');
+  const isLeader = state.role === 'leader';
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning 🌅' : hour < 17 ? 'Good afternoon ☀️' : 'Good evening 👋';
+  document.getElementById('home-greeting').textContent = greeting;
+
+  // Define tiles — leaders see all, youth see subset
+  const tiles = [
+    {
+      id: 'roll',
+      icon: '✅',
+      name: 'Roll Call',
+      desc: 'Take attendance',
+      leaderOnly: true,
+      action: () => showTab('roll'),
+      badgeId: null,
+    },
+    {
+      id: 'chat',
+      icon: '💬',
+      name: 'Messages',
+      desc: 'Chat with your group',
+      leaderOnly: false,
+      action: () => showTab('chat'),
+      badgeId: 'home-chat-badge',
+    },
+    {
+      id: 'badges',
+      icon: '🏅',
+      name: 'Badges',
+      desc: 'OAS & achievements',
+      leaderOnly: false,
+      action: () => showTab('badges'),
+      badgeId: null,
+    },
+    {
+      id: 'profile',
+      icon: '👤',
+      name: 'Profile',
+      desc: 'Your details',
+      leaderOnly: false,
+      action: () => showTab('profile'),
+      badgeId: null,
+    },
+  ];
+
+  const visibleTiles = tiles.filter(t => !t.leaderOnly || isLeader);
+
+  grid.innerHTML = visibleTiles.map(t => `
+    <div class="home-tile" onclick="homeTileAction('${t.id}')">
+      <div class="home-tile-icon">${t.icon}</div>
+      <div>
+        <div class="home-tile-name">${t.name}</div>
+        <div class="home-tile-desc">${t.desc}</div>
+        ${t.badgeId ? `<div class="home-tile-badge" id="${t.badgeId}" style="display:none">!</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  // Store tile actions for later
+  window._homeTileActions = {};
+  visibleTiles.forEach(t => { window._homeTileActions[t.id] = t.action; });
+}
+
+function homeTileAction(id) {
+  if (window._homeTileActions && window._homeTileActions[id]) {
+    window._homeTileActions[id]();
+  }
 }
 
 // ── UNIT SELECTOR ─────────────────────────────────────────────
@@ -1963,9 +2069,8 @@ function showTab(tab) {
   if (tab !== 'home') NAV_STACK.push('home');
   NAV_STACK.push(screen);
 
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + tab);
-  if (navEl) navEl.classList.add('active');
+  // No bottom nav — home grid is the launcher
+  // (nav-item classes kept for compatibility but nav is hidden)
 
   _showScreen(screen);
   history.pushState({ screen, tab }, '', '');
@@ -1985,6 +2090,10 @@ function _showScreen(name) {
   const el = document.getElementById('screen-' + name);
   if (el) el.classList.add('active');
   window.scrollTo(0, 0);
+
+  // Show back bar on all screens except home
+  const backBar = document.getElementById('back-bar');
+  if (backBar) backBar.style.display = name === 'home' ? 'none' : 'block';
 }
 
 function goBack() {
