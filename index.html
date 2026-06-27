@@ -483,6 +483,18 @@
   }
   .chat-screen.active { display: flex; }
 
+  /* On desktop, constrain chat to app width */
+  @media (min-width: 600px) {
+    .chat-screen {
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 560px;
+    }
+    .message-input-bar {
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 560px;
+    }
+  }
+
   /* New channel modal */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
