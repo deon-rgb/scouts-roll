@@ -247,7 +247,22 @@
   .hero-stat .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
 
   /* ── EVENT CARDS ────────────────────────────────────────── */
-  .event-card {
+  /* ── SECTION PICKER ──────────────────────────────── */
+  .section-tile {
+    display: flex; align-items: center; gap: 14px;
+    background: white; border-radius: 14px;
+    padding: 16px; margin-bottom: 10px;
+    cursor: pointer; border: 2px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .section-tile:active { transform: scale(0.98); }
+  .section-tile-icon { font-size: 28px; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .section-tile-name { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .section-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .event-card {
     background: var(--surface);
     border-radius: var(--radius);
     padding: 16px;
@@ -700,17 +715,18 @@
 </div>
 
 <!-- ROLL TAB -->
+<!-- ROLL: SECTION PICKER -->
+<div id="screen-roll-section" class="screen">
+  <div id="section-picker-list">
+    <!-- Rendered by renderSectionPicker() -->
+  </div>
+</div>
+
+<!-- ROLL: EVENTS LIST -->
 <div id="screen-roll-list" class="screen">
-  <div style="padding: 0 0 12px 0;">
-    <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px">Unit</label>
-    <select id="unit-selector" onchange="onUnitChange()" style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236B7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:16px;cursor:pointer;">
-      <option value="054bc5df-bb9d-4ef9-a041-1a22518c4d1a">🔵 Scouts</option>
-      <option value="6ed6a27f-e76e-49b7-ad20-d8143d37dbe3">🟠 Joeys</option>
-      <option value="a1fb7ab1-96d2-4b02-b3e8-fc0bed99142b">🟡 Cubs</option>
-      <option value="c5bfe4a0-9734-4b73-b544-99bb0bd42716">🟣 Venturers</option>
-      <option value="6fe441ab-1382-406a-bbf8-aeb6a03b86c1">🟤 Rovers</option>
-      <option value="all">👥 All sections</option>
-    </select>
+  <div id="roll-section-header" style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+    <div id="roll-section-dot" style="width:12px;height:12px;border-radius:50%;background:var(--navy)"></div>
+    <span id="roll-section-label" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">All sections</span>
   </div>
   <div class="section-label">Select a meeting</div>
   <div id="roll-events-list">
@@ -1734,6 +1750,67 @@ function homeTileAction(id) {
 }
 
 // ── UNIT SELECTOR ─────────────────────────────────────────────
+// ── SECTION PICKER ───────────────────────────────────────────
+const SECTIONS = [
+  { id: '6ed6a27f-e76e-49b7-ad20-d8143d37dbe3', name: 'Joeys',     emoji: '🪺', color: '#C8830A', bg: '#FEF3C7', ages: '5–8 years' },
+  { id: 'a1fb7ab1-96d2-4b02-b3e8-fc0bed99142b', name: 'Cubs',      emoji: '🐻', color: '#B45309', bg: '#FEF9C3', ages: '8–11 years' },
+  { id: '054bc5df-bb9d-4ef9-a041-1a22518c4d1a', name: 'Scouts',    emoji: '⚜️', color: '#166534', bg: '#DCFCE7', ages: '11–14 years' },
+  { id: 'c5bfe4a0-9734-4b73-b544-99bb0bd42716', name: 'Venturers', emoji: '🏔️', color: '#6B21A8', bg: '#F3E8FF', ages: '14–18 years' },
+  { id: '6fe441ab-1382-406a-bbf8-aeb6a03b86c1', name: 'Rovers',    emoji: '🔴', color: '#991B1B', bg: '#FEE2E2', ages: '18–25 years' },
+];
+
+function renderSectionPicker() {
+  const list = document.getElementById('section-picker-list');
+  if (!list) return;
+
+  // Only show sections this leader manages
+  let unitIds = [];
+  try { unitIds = JSON.parse(localStorage.getItem('scouts_session') ? JSON.parse(localStorage.getItem('scouts_session')).unit_ids || '[]' : '[]'); } catch(_) {}
+
+  const visibleSections = SECTIONS.filter(s => unitIds.includes(s.id));
+
+  list.innerHTML = visibleSections.map(s => `
+    <div class="section-tile" onclick="selectSection('${s.id}', '${s.name}', '${s.color}')" style="border-color:${s.color}20">
+      <div class="section-tile-icon" style="background:${s.bg}">
+        <span style="font-size:22px">${s.emoji}</span>
+      </div>
+      <div>
+        <div class="section-tile-name">${s.name}</div>
+        <div class="section-tile-desc">${s.ages}</div>
+      </div>
+      <div style="margin-left:auto;color:#9CA3AF;font-size:20px">›</div>
+    </div>
+  `).join('') + `
+    <div class="section-tile" onclick="selectSection('all', 'All sections', 'var(--navy)')" style="border-color:#E5E7EB">
+      <div class="section-tile-icon" style="background:#F3F4F6">
+        <span style="font-size:22px">👥</span>
+      </div>
+      <div>
+        <div class="section-tile-name">All sections</div>
+        <div class="section-tile-desc">View all events</div>
+      </div>
+      <div style="margin-left:auto;color:#9CA3AF;font-size:20px">›</div>
+    </div>
+  `;
+}
+
+function selectSection(unitId, name, color) {
+  state.selectedUnitId = unitId;
+
+  // Update header
+  const dot   = document.getElementById('roll-section-dot');
+  const label = document.getElementById('roll-section-label');
+  if (dot)   dot.style.background   = color;
+  if (label) label.textContent      = name;
+
+  // Also sync the hidden unit-selector for compatibility
+  const sel = document.getElementById('unit-selector');
+  if (sel) sel.value = unitId;
+
+  showScreen('roll-list');
+  Promise.all([loadEvents(), loadMembers()]);
+}
+
 function onUnitChange() {
   const sel = document.getElementById('unit-selector');
   state.selectedUnitId = sel.value;
@@ -1825,8 +1902,19 @@ function eventCardHTML(ev, compact) {
 
   const onclick = state.role === 'leader' ? `selectEvent('${ev.id}')` : '';
 
+  // Section colour for date block
+  const SECTION_COLORS = {
+    '6ed6a27f': '#C8830A', // Joeys — tawny
+    'a1fb7ab1': '#B45309', // Cubs — yellow/brown
+    '054bc5df': '#166534', // Scouts — green
+    'c5bfe4a0': '#6B21A8', // Venturers — maroon/purple
+    '6fe441ab': '#991B1B', // Rovers — red
+  };
+  const unitShort = (ev.unit_id || '').slice(0, 8);
+  const dateColor = SECTION_COLORS[unitShort] || 'var(--navy)';
+
   return `<div class="event-card ${concluded && !hasAtt ? 'roll-missing' : ''}" onclick="${onclick}">
-    <div class="event-date">
+    <div class="event-date" style="background:${dateColor}">
       <div class="day">${day}</div>
       <div class="mon">${mon}</div>
     </div>
@@ -2053,7 +2141,7 @@ async function doSaveRoll() {
 const NAV_STACK = [];
 
 const SCREEN_MAP = {
-  home: 'home', roll: 'roll-list', profile: 'profile',
+  home: 'home', roll: 'roll-section', profile: 'profile',
   chat: 'chat', badges: 'badge-members'
 };
 
@@ -2077,6 +2165,7 @@ function showTab(tab) {
 
   if (tab === 'chat')   loadChannels();
   if (tab === 'badges') loadBadgesTab();
+  if (tab === 'roll')   renderSectionPicker();
 }
 
 function showScreen(name) {
