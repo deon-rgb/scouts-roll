@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#00348D">
+<meta name="theme-color" content="#071629">
 <link rel="manifest" href="/manifest.json">
 <script>
   // Register service worker for offline support
@@ -27,13 +27,13 @@
     --blue:           #006DDF;
     --green:          #25B755;
 
-    /* Light mode surfaces */
-    --bg:             #F0F4F8;
-    --surface:        #FFFFFF;
-    --surface-raised: #E8EEF5;
-    --text:           #071629;
-    --text-muted:     #53667A;
-    --border:         #D0DCE8;
+    /* Dark app shell */
+    --bg:             #071629;
+    --surface:        #0F233D;
+    --surface2:       #183250;
+    --text:           #F7FAFC;
+    --text-muted:     #A9B7C8;
+    --border:         #284563;
 
     /* Section colours */
     --joey:           #B8894A;
@@ -42,31 +42,20 @@
     --venturer:       #7A1632;
     --rover:          #D71920;
 
-    /* Legacy / functional */
+    /* Functional */
     --gold:           #F4A800;
     --gold-light:     #FFD166;
     --green-light:    #4DCF7C;
     --red:            #E74C3C;
 
     /* Radii */
-    --radius:         22px;
+    --radius:         24px;
     --radius-btn:     16px;
     --radius-sm:      12px;
 
     /* Shadows */
-    --shadow:         0 2px 16px rgba(0,57,130,0.08);
-    --shadow-lg:      0 8px 32px rgba(0,57,130,0.14);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg:             #071629;
-      --surface:        #0F233D;
-      --surface-raised: #183250;
-      --text:           #F7FAFC;
-      --text-muted:     #A9B7C8;
-      --border:         #284563;
-    }
+    --shadow:         0 2px 16px rgba(0,0,0,0.25);
+    --shadow-lg:      0 8px 32px rgba(0,0,0,0.4);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -82,39 +71,52 @@
 
   /* ── HEADER ─────────────────────────────────────────────── */
   .app-header {
-    background: var(--navy);
-    color: white;
+    background: var(--bg);
+    color: var(--text);
     padding: env(safe-area-inset-top, 0) 0 0;
     position: sticky;
     top: 0;
     z-index: 200;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+    border-bottom: 1px solid var(--border);
   }
   .header-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px 16px;
+    padding: 14px 20px 14px;
+    gap: 12px;
+  }
+  .header-mark {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 18px; flex-shrink: 0;
+  }
+  .header-left {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
   }
   .header-left h1 {
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 900;
     letter-spacing: -0.3px;
-    line-height: 1;
+    line-height: 1.1;
+    color: var(--text);
   }
   .header-left p {
-    font-size: 12px;
-    opacity: 0.65;
-    margin-top: 3px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
   }
   .header-avatar {
-    width: 36px; height: 36px;
+    width: 38px; height: 38px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: 2px solid rgba(255,255,255,0.3);
+    background: var(--surface2);
+    border: 2px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 700;
-    cursor: pointer;
+    font-size: 14px; font-weight: 900;
+    cursor: pointer; flex-shrink: 0;
+    color: var(--text);
   }
 
   /* ── NAV ────────────────────────────────────────────────── */
@@ -126,7 +128,6 @@
     display: flex;
     padding-bottom: env(safe-area-inset-bottom, 0);
     z-index: 200;
-    box-shadow: 0 -4px 24px rgba(0,57,130,0.08);
   }
   .nav-item {
     flex: 1;
@@ -142,7 +143,7 @@
     transition: color 0.15s;
     user-select: none;
   }
-  .nav-item.active { color: var(--navy); }
+  .nav-item.active { color: var(--blue); }
   .nav-icon { font-size: 22px; line-height: 1; }
 
   /* ── SCREENS ────────────────────────────────────────────── */
@@ -153,13 +154,13 @@
   #screen-home { padding: 0; max-width: 100%; }
 
   .home-header {
-    background: var(--navy); color: white;
-    padding: env(safe-area-inset-top, 0) 20px 24px;
-    padding-top: calc(env(safe-area-inset-top, 0) + 20px);
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 20px 16px;
   }
-  .home-greeting { font-size: 13px; opacity: 0.75; margin-bottom: 2px; }
-  .home-name { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-  .home-subtitle { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+  .home-greeting { font-size: 12px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 2px; }
+  .home-name { font-size: 30px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.04; margin: 3px 0 0; }
+  .home-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 
   .home-grid {
     display: grid;
@@ -176,21 +177,20 @@
     padding: 20px 16px;
     display: flex; flex-direction: column;
     align-items: flex-start; justify-content: space-between;
-    min-height: 120px;
+    min-height: 122px;
     cursor: pointer;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1.5px solid var(--border);
-    transition: transform 0.1s, box-shadow 0.1s;
+    border: 1px solid var(--border);
+    transition: transform 0.1s;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     text-decoration: none;
     color: inherit;
   }
-  .home-tile:active { transform: scale(0.97); box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+  .home-tile:active { transform: scale(0.97); }
 
-  .home-tile-icon { font-size: 32px; line-height: 1; margin-bottom: 8px; }
-  .home-tile-name { font-size: 15px; font-weight: 700; color: var(--navy); }
-  .home-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .home-tile-icon { font-size: 28px; line-height: 1; margin-bottom: 8px; }
+  .home-tile-name { font-size: 17px; font-weight: 900; color: var(--text); }
+  .home-tile-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .home-tile-badge {
     background: var(--red); color: white;
     border-radius: var(--radius-sm); padding: 2px 7px;
@@ -208,7 +208,7 @@
     min-height: 100dvh;
     align-items: center; justify-content: center;
     padding: 32px 24px;
-    background: var(--navy);
+    background: var(--bg);
     max-width: 100%;
   }
   .login-logo {
@@ -216,32 +216,32 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
   }
   .login-title {
-    color: white; font-size: 26px; font-weight: 800;
+    color: var(--text); font-size: 26px; font-weight: 900;
     letter-spacing: -0.5px; margin-bottom: 4px; text-align: center;
   }
   .login-sub {
-    color: rgba(255,255,255,0.6); font-size: 14px;
+    color: var(--text-muted); font-size: 14px;
     margin-bottom: 40px; text-align: center;
   }
   .login-card {
     background: var(--surface); border-radius: var(--radius);
     padding: 28px 24px; width: 100%; max-width: 400px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
   }
-  .login-card h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+  .login-card h2 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
 
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
-  .field input { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.15s; font-family: 'Nunito Sans', system-ui, sans-serif; }
-  .field input:focus { border-color: var(--navy); background: var(--surface); }
+  .field input { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; color: var(--text); background: var(--surface2); outline: none; transition: border-color 0.15s; font-family: 'Nunito Sans', system-ui, sans-serif; }
+  .field input:focus { border-color: var(--blue); background: var(--surface2); }
   .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
 
   .btn { width: 100%; padding: 15px; border: none; border-radius: var(--radius-btn); font-size: 16px; font-weight: 900; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; font-family: 'Nunito Sans', system-ui, sans-serif; }
-  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary { background: var(--blue); color: white; }
   .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-danger { background: #FEE2E2; color: var(--red); margin-top: 8px; }
-  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--navy); font-weight: 700; }
+  .btn-danger { background: rgba(231,76,60,0.15); color: #FF6B6B; border: 1px solid rgba(231,76,60,0.3); margin-top: 8px; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); font-weight: 700; }
 
   .error-msg { background: #FEE2E2; border: 1px solid #FECACA; color: #DC2626; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; display: none; font-family: 'Nunito Sans', system-ui, sans-serif; }
   .error-msg.show { display: block; }
@@ -290,7 +290,7 @@
   }
   .section-tile:active { transform: scale(0.98); }
   .section-tile-icon { font-size: 28px; width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
-  .section-tile-name { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .section-tile-name { font-size: 16px; font-weight: 700; color: var(--text); }
   .section-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
   .event-card {
@@ -351,13 +351,13 @@
     justify-content: space-between;
     border: 1px solid var(--border);
   }
-  .att-num { font-size: 40px; font-weight: 800; color: var(--navy); line-height: 1; }
+  .att-num { font-size: 40px; font-weight: 900; color: var(--text); line-height: 1; }
   .att-lbl { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .att-total { font-size: 15px; color: var(--text-muted); }
 
   .quick-row { display: flex; gap: 8px; margin-bottom: 14px; }
-  .quick-btn { flex: 1; padding: 11px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer; text-align: center; min-height: 44px; font-family: 'Nunito Sans', system-ui, sans-serif; }
-  .quick-btn:active { background: var(--bg); }
+  .quick-btn { flex: 1; padding: 11px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; text-align: center; min-height: 44px; font-family: 'Nunito Sans', system-ui, sans-serif; }
+  .quick-btn:active { background: var(--border); }
 
   .member-row {
     background: var(--surface);
@@ -374,7 +374,7 @@
     user-select: none;
     min-height: 44px;
   }
-  .member-row.present { border-color: var(--green-light); background: #F0FFF6; }
+  .member-row.present { border-color: var(--green); background: rgba(37,183,85,0.12); }
   .member-row:active  { transform: scale(0.99); }
 
   .member-avatar {
@@ -407,17 +407,16 @@
   .save-bar {
     position: fixed;
     bottom: 65px; left: 0; right: 0;
-    background: var(--surface);
+    background: var(--bg);
     border-top: 1px solid var(--border);
     padding: 12px 16px 12px;
     display: flex; gap: 10px;
     z-index: 150;
-    box-shadow: 0 -4px 24px rgba(0,57,130,0.10);
   }
   .save-bar .btn { flex: 1; padding: 15px; }
   .btn-back {
-    background: var(--bg);
-    border: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     width: 50px; min-width: 50px;
     font-size: 20px;
@@ -438,15 +437,16 @@
     border: 1px solid var(--border);
   }
   .success-icon { font-size: 64px; margin-bottom: 16px; }
-  .success-card h2 { font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .success-card h2 { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
   .success-card p  { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
   .success-detail {
-    background: var(--bg); border-radius: var(--radius-sm);
+    background: var(--surface2); border-radius: var(--radius-sm);
     padding: 14px 16px; margin: 20px 0; text-align: left;
+    border: 1px solid var(--border);
   }
   .success-detail div { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
   .success-detail div:last-child { margin-bottom: 0; }
-  .success-detail .lbl { font-weight: 700; color: var(--navy); min-width: 70px; }
+  .success-detail .lbl { font-weight: 700; color: var(--text-muted); min-width: 70px; }
 
   /* ── LOADING ────────────────────────────────────────────── */
   .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
@@ -507,7 +507,7 @@
   .channel-preview { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .channel-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .channel-badge {
-    background: var(--navy); color: white;
+    background: var(--blue); color: white;
     border-radius: 20px; font-size: 11px; font-weight: 700;
     padding: 2px 7px; flex-shrink: 0;
   }
@@ -521,12 +521,14 @@
 
   /* Message screen */
   .chat-header {
-    background: var(--navy); color: white;
+    background: var(--surface);
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
     padding: 14px 16px; display: flex; align-items: center; gap: 12px;
   }
   .chat-header h2 { font-size: 16px; font-weight: 700; flex: 1; }
-  .chat-header p  { font-size: 12px; opacity: 0.7; }
-  .chat-back { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 0 4px; min-height: 44px; }
+  .chat-header p  { font-size: 12px; color: var(--text-muted); }
+  .chat-back { background: none; border: none; color: var(--text); font-size: 22px; cursor: pointer; padding: 0 4px; min-height: 44px; }
 
   .messages-container {
     flex: 1; overflow-y: auto; padding: 16px;
@@ -548,9 +550,9 @@
     padding: 10px 14px; border-radius: var(--radius-sm);
     font-size: 15px; line-height: 1.4; word-break: break-word;
   }
-  .message-bubble.mine   .bubble-content { background: var(--navy); color: white; border-bottom-right-radius: 4px; }
-  .message-bubble.theirs .bubble-content { background: var(--surface); color: var(--text); border-bottom-left-radius: 4px; box-shadow: var(--shadow); }
-  .message-bubble.leader .bubble-content { background: #EFF6FF; border-left: 3px solid var(--navy); }
+  .message-bubble.mine   .bubble-content { background: var(--blue); color: white; border-bottom-right-radius: 4px; }
+  .message-bubble.theirs .bubble-content { background: var(--surface2); color: var(--text); border-bottom-left-radius: 4px; }
+  .message-bubble.leader .bubble-content { background: var(--surface2); border-left: 3px solid var(--blue); }
 
   .bubble-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
   .bubble-flag { font-size: 10px; color: #DC2626; margin-top: 2px; }
@@ -569,10 +571,10 @@
     font-family: 'Nunito Sans', system-ui, sans-serif;
     background: var(--bg); color: var(--text);
   }
-  .message-input:focus { border-color: var(--navy); }
+  .message-input:focus { border-color: var(--blue); }
   .send-btn {
     width: 40px; height: 40px; border-radius: 50%;
-    background: var(--navy); color: white; border: none;
+    background: var(--blue); color: white; border: none;
     font-size: 18px; cursor: pointer; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.1s;
@@ -603,16 +605,17 @@
   /* New channel modal */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5); z-index: 300;
+    background: rgba(0,0,0,0.7); z-index: 300;
     align-items: flex-end; justify-content: center;
   }
   .modal-overlay.show { display: flex; }
   .modal-sheet {
     background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+    border-top: 1px solid var(--border);
     padding: 24px; width: 100%; max-width: 560px;
     max-height: 80vh; overflow-y: auto;
   }
-  .modal-sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+  .modal-sheet h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
   .modal-close {
     float: right; background: none; border: none;
     font-size: 24px; cursor: pointer; color: var(--text-muted);
@@ -621,12 +624,12 @@
   .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .type-btn {
     padding: 14px 10px; border: 2px solid var(--border);
-    border-radius: var(--radius-sm); background: var(--surface-raised);
+    border-radius: var(--radius-sm); background: var(--surface2);
     cursor: pointer; text-align: center; transition: all 0.15s;
   }
-  .type-btn.selected { border-color: var(--navy); background: #EFF6FF; }
+  .type-btn.selected { border-color: var(--blue); background: rgba(0,109,223,0.15); }
   .type-btn .type-icon { font-size: 24px; margin-bottom: 4px; }
-  .type-btn .type-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .type-btn .type-name { font-size: 13px; font-weight: 700; color: var(--text); }
   .type-btn .type-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
   /* Flags badge */
@@ -645,14 +648,14 @@
     padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow);
     border: 1px solid var(--border);
   }
-  .milestone-card h3 { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 12px; }
+  .milestone-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
   .progress-bar-outer {
-    background: var(--bg); border-radius: 20px; height: 10px;
+    background: var(--surface2); border-radius: 20px; height: 10px;
     margin: 8px 0 4px; overflow: hidden;
   }
   .progress-bar-inner {
     height: 100%; border-radius: 20px;
-    background: linear-gradient(90deg, var(--navy), var(--blue));
+    background: linear-gradient(90deg, var(--blue), var(--green));
     transition: width 0.5s ease;
   }
   .progress-label {
@@ -668,7 +671,7 @@
     padding: 14px; box-shadow: var(--shadow);
     border: 1px solid var(--border);
   }
-  .oas-stream-name { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .oas-stream-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
   .oas-stage-dots { display: flex; gap: 4px; flex-wrap: wrap; }
   .stage-dot {
     width: 20px; height: 20px; border-radius: 50%;
@@ -677,7 +680,7 @@
   }
   .stage-dot.awarded    { background: var(--green); color: white; }
   .stage-dot.pending    { background: #FEF3C7; color: #B45309; }
-  .stage-dot.empty      { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+  .stage-dot.empty      { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
   .next-badge-card {
     background: linear-gradient(135deg, #F59E0B, #D97706);
     border-radius: var(--radius); padding: 18px; color: white; margin-bottom: 16px;
@@ -711,20 +714,23 @@
 <div class="app-header" id="app-header" style="display:none">
   <div class="header-inner">
     <div class="header-left">
-      <h1>⚜️ Princes Park Scouts</h1>
-      <p id="header-role">Loading…</p>
+      <div class="header-mark">⚜</div>
+      <div>
+        <h1>Princes Park</h1>
+        <p id="header-role">Loading…</p>
+      </div>
     </div>
     <div class="header-avatar" id="header-avatar" onclick="showTab('profile')">?</div>
   </div>
 </div>
 
 <!-- LOGIN MODAL — shown over app when session needed -->
-<div id="login-modal" class="modal-overlay show" style="align-items:center;background:rgba(0,30,100,0.95)">
+<div id="login-modal" class="modal-overlay show" style="align-items:center;background:#071629">
   <div style="width:100%;max-width:420px;padding:32px 24px;display:flex;flex-direction:column;align-items:center">
     <div style="font-size:64px;margin-bottom:8px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))">⚜️</div>
     <div style="color:white;font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;text-align:center">Princes Park Scouts</div>
     <div style="color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:32px;text-align:center" id="login-subtitle">Sign in with your Terrain account</div>
-    <div style="background:white;border-radius:20px;padding:28px 24px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="background:var(--surface);border-radius:20px;padding:28px 24px;width:100%;border:1px solid var(--border)">
       <h2 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Welcome back</h2>
       <div class="error-msg" id="login-error"></div>
       <div class="field">
@@ -750,7 +756,7 @@
   </div>
 
   <!-- Next event card — rendered by renderNextEvent() -->
-  <div id="home-next-event" style="display:none;margin:12px 16px 0;background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1.5px solid var(--border)">
+  <div id="home-next-event" style="display:none;margin:12px 16px 0;background:var(--surface);border-radius:20px;padding:16px;border:1px solid var(--border)">
     <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Next meeting</div>
     <div style="display:flex;align-items:center;gap:12px">
       <div id="home-next-date" style="width:44px;height:44px;border-radius:10px;background:var(--navy);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
@@ -758,7 +764,7 @@
         <div style="font-size:10px;font-weight:600;opacity:0.8" id="home-next-mon">–</div>
       </div>
       <div>
-        <div style="font-size:15px;font-weight:700;color:var(--navy)" id="home-next-title">–</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)" id="home-next-title">–</div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="home-next-meta">–</div>
       </div>
     </div>
@@ -864,8 +870,8 @@
 </nav>
 
 <!-- Fixed back-to-home bar shown on all non-home screens -->
-<div id="back-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1.5px solid var(--border);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0));z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,0.06);">
-  <button onclick="showTab('home')" style="display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--navy);font-size:15px;font-weight:700;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;">
+<div id="back-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0));z-index:200;">
+  <button onclick="showTab('home')" style="display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--text-muted);font-size:15px;font-weight:700;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;">
     <span style="font-size:22px;line-height:1">←</span> Home
   </button>
 </div>
@@ -994,7 +1000,7 @@
       </label>
     </div>
 
-    <div style="background:#EFF6FF;border-radius:10px;padding:12px;font-size:13px;color:#1D4ED8;margin-bottom:16px">
+    <div style="background:rgba(0,109,223,0.12);border:1px solid rgba(0,109,223,0.25);border-radius:10px;padding:12px;font-size:13px;color:#7BB8FF;margin-bottom:16px">
       ⚠️ All messages are visible to group supervisors for child safety purposes (Two Present Leadership).
     </div>
 
@@ -1014,7 +1020,7 @@
     <div class="field">
       <label>Member ID</label>
       <input type="text" id="reauth-username" readonly
-        style="background:#f0f0f0;color:var(--text-muted)" />
+        style="background:var(--surface2);color:var(--text-muted)" />
     </div>
     <div class="field">
       <label>Password</label>
@@ -2123,13 +2129,11 @@ function updateRollMode() {
   bar.id = 'roll-status-bar';
 
   if (isConcluded && !editMode) {
-    // View mode — show finalised banner with edit button
-    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#F0FFF6;border:1px solid #6EE7B7;color:#065F46;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px';
-    bar.innerHTML = '<span>✓ Finalised in Terrain</span><button onclick="enterRollEditMode()" style="background:#065F46;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Edit roll</button>';
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(37,183,85,0.12);border:1px solid rgba(37,183,85,0.3);color:#4DCF7C;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px';
+    bar.innerHTML = '<span>✓ Finalised in Terrain</span><button onclick="enterRollEditMode()" style="background:rgba(37,183,85,0.2);color:#4DCF7C;border:1px solid rgba(37,183,85,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Edit roll</button>';
   } else if (isConcluded && editMode) {
-    // Edit mode on concluded event — show warning
-    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px';
-    bar.innerHTML = '<span>⚠️ Editing finalised roll</span><button onclick="cancelRollEdit()" style="background:transparent;border:1px solid #92400E;color:#92400E;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Cancel</button>';
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(244,168,0,0.12);border:1px solid rgba(244,168,0,0.3);color:#F4A800;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px';
+    bar.innerHTML = '<span>⚠️ Editing finalised roll</span><button onclick="cancelRollEdit()" style="background:transparent;border:1px solid rgba(244,168,0,0.4);color:#F4A800;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Cancel</button>';
   }
 
   if (bar.innerHTML) {
