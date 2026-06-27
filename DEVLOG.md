@@ -417,3 +417,25 @@ cd ~/scouts-roll && cat >> DEVLOG.md << 'EOF'
 - Nightly retry queue removed (redundant)
 - Clear All button on roll call not working (known bug, not yet fixed)
 
+
+---
+
+## Session log: 2026-06-27 (final)
+
+**Keyword flagging confirmed working:**
+- Flags appear for all leaders regardless of channel membership ✅
+- Sender name and message content display correctly ✅
+- Flagged messages not visible to sender ✅
+- Single flag per keyword (duplicates cleaned from keyword_flags table) ✅
+- "Tap to review" dismisses flag ✅
+
+**Duplicate keywords cleaned:**
+- keyword_flags had 38 rows (13 unique keywords x3) — deleted rows >13
+
+**Chat fully tested end to end:**
+- Two-way messaging ✅
+- Role labels (Leader badge) ✅
+- Consent gate ✅
+- Keyword monitoring ✅
+- Leader sees all flags across all channels ✅
+
