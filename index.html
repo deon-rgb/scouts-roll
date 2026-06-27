@@ -1004,7 +1004,7 @@ async function loadFlags() {
     list.innerHTML = flags.map(f => `
       <div class="flag-alert" onclick="reviewFlag(${f.id}, '${f.channel_id}')">
         <h4>⚠️ "${f.keyword}" — ${f.severity.toUpperCase()}</h4>
-        <p>${f.sender_name}: "${f.content}"</p>
+        <p>${f.sender_name || f.sender_id}: "${f.message_content || f.content || ''}"</p>
         <div class="flag-meta">${f.channel_name} · ${formatTime(f.created_at)} · Tap to review</div>
       </div>
     `).join('');

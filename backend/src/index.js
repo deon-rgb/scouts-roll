@@ -917,7 +917,7 @@ async function archiveChannel(channelId, env, member) {
 async function getFlags(env, member) {
   if (!isSupervisor(member)) return err('Leaders only', 403);
   const rows = await env.scouts_db.prepare(
-    `SELECT fa.*, m.content as message_content, ch.name as channel_name
+    `SELECT fa.*, m.content as message_content, m.sender_name, ch.name as channel_name
      FROM flag_alerts fa
      JOIN messages m ON m.id = fa.message_id
      JOIN channels ch ON ch.id = fa.channel_id
