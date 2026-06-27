@@ -482,3 +482,11 @@ cd ~/scouts-roll && cat >> DEVLOG.md << 'EOF'
 - Events filtered correctly per section
 - Section colour coding working
 
+
+**Roll call fixes confirmed working (2026-06-27 afternoon):**
+- Root cause of missing sections: unit_ids not saved to localStorage session — fixed
+- Root cause of spinner: null dereference on removed DOM elements — fixed  
+- All 4 sections (Joeys, Cubs, Scouts, Venturers) showing correctly
+- Events filtered correctly per section
+- Section colour coding working
+
