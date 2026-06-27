@@ -731,6 +731,37 @@
   }
   .member-select-row:active { transform: scale(0.98); }
 
+  /* Section picker */
+  #screen-roll-section { padding: 0; max-width: 100%; }
+  .sp-page { padding: 24px 20px 40px; max-width: 430px; margin: 0 auto; }
+  .sp-h1 { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 900; letter-spacing: -0.045em; color: var(--text); }
+  .sp-intro { margin: 10px 0 30px; color: var(--text-muted); font-size: 16px; line-height: 1.4; font-weight: 700; }
+  .sp-buttons { display: grid; gap: 16px; }
+  .sp-btn {
+    height: 116px; width: 100%; border: 0; border-radius: 30px;
+    padding: 0 26px; display: flex; align-items: center;
+    justify-content: space-between; color: white;
+    box-shadow: 0 18px 36px rgba(0,0,0,.22);
+    font-family: inherit; cursor: pointer;
+  }
+  .sp-btn.sp-cub { color: #071629; }
+  .sp-btn-name { font-size: 31px; font-weight: 900; letter-spacing: -0.045em; }
+  .sp-btn-arrow { font-size: 38px; font-weight: 900; line-height: 1; opacity: 0.9; }
+  .sp-divider {
+    display: flex; align-items: center; gap: 14px;
+    margin: 26px 0 16px; color: #6F8197;
+    font-size: 12px; font-weight: 900; letter-spacing: 0.14em;
+  }
+  .sp-divider::before, .sp-divider::after { content: ""; height: 1px; background: var(--border); flex: 1; }
+  .sp-all-btn {
+    height: 96px; width: 100%; border: 1px solid var(--border);
+    border-radius: 28px; padding: 0 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); color: var(--text);
+    font-family: inherit; box-shadow: 0 14px 30px rgba(0,0,0,.16); cursor: pointer;
+  }
+  .sp-all-btn .sp-btn-name { font-size: 28px; }
+
   /* Login screen */
   #login-modal .login-shell { width: 100%; max-width: 504px; margin: 0 auto; }
   #login-modal .login-brand { text-align: center; margin-bottom: 36px; display: flex; flex-direction: column; align-items: center; }
@@ -864,8 +895,12 @@
 <!-- ROLL TAB -->
 <!-- ROLL: SECTION PICKER -->
 <div id="screen-roll-section" class="screen">
-  <div id="section-picker-list">
-    <!-- Rendered by renderSectionPicker() -->
+  <div class="sp-page">
+    <h1 class="sp-h1">Select a section</h1>
+    <div class="sp-intro">Choose which section you're taking attendance for.</div>
+    <div id="section-picker-list">
+      <!-- Rendered by renderSectionPicker() -->
+    </div>
   </div>
 </div>
 
@@ -1948,24 +1983,30 @@ function renderSectionPicker() {
     ? SECTIONS.filter(s => unitIds.some(uid => uid.startsWith(s.id.slice(0,8))))
     : SECTIONS;
 
-  list.innerHTML = visible.map(s => `
-    <div class="section-tile" onclick="selectSection('${s.id}','${s.name}','${s.color}')" style="border-color:${s.color}30">
-      <div class="section-tile-icon" style="background:${s.bg}">${s.emoji}</div>
-      <div style="flex:1">
-        <div class="section-tile-name">${s.name}</div>
-        <div class="section-tile-desc">${s.ages}</div>
-      </div>
-      <div style="color:#9CA3AF;font-size:20px">›</div>
+  const brandColor = {
+    'Joeys':     'var(--joey)',
+    'Cubs':      'var(--cub)',
+    'Scouts':    'var(--scout)',
+    'Venturers': 'var(--venturer)',
+    'Rovers':    'var(--rover)',
+  };
+
+  list.innerHTML = `
+    <div class="sp-buttons">
+      ${visible.map(s => `
+        <button class="sp-btn${s.name === 'Cubs' ? ' sp-cub' : ''}"
+          style="background:${brandColor[s.name] || s.color}"
+          onclick="selectSection('${s.id}','${s.name}','${s.color}')">
+          <span class="sp-btn-name">${s.name}</span>
+          <span class="sp-btn-arrow">›</span>
+        </button>
+      `).join('')}
     </div>
-  `).join('') + `
-    <div class="section-tile" onclick="selectSection('all','All sections','#00348D')" style="border-color:#E5E7EB">
-      <div class="section-tile-icon" style="background:#F3F4F6">👥</div>
-      <div style="flex:1">
-        <div class="section-tile-name">All sections</div>
-        <div class="section-tile-desc">View all events</div>
-      </div>
-      <div style="color:#9CA3AF;font-size:20px">›</div>
-    </div>
+    <div class="sp-divider">OR</div>
+    <button class="sp-all-btn" onclick="selectSection('all','All Sections','#00348D')">
+      <span class="sp-btn-name">All Sections</span>
+      <span class="sp-btn-arrow">›</span>
+    </button>
   `;
 }
 
