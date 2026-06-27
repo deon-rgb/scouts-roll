@@ -658,6 +658,10 @@
 
 <!-- ROLL TAB -->
 <div id="screen-roll-list" class="screen">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <button class="btn-back" onclick="showTab('home')">←</button>
+    <span style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Roll Call</span>
+  </div>
   <div style="padding: 0 0 12px 0;">
     <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px">Unit</label>
     <select id="unit-selector" onchange="onUnitChange()" style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236B7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:16px;cursor:pointer;">
@@ -706,7 +710,7 @@
   <div class="success-card">
     <div class="success-icon">🎉</div>
     <h2>Roll saved!</h2>
-    <p>Attendance queued to sync to Terrain tonight.</p>
+    <p>Attendance saved to Terrain.</p>
     <div class="success-detail" id="success-detail"></div>
     <button class="btn btn-primary" onclick="showTab('roll')" style="margin-top:4px">Back to events</button>
   </div>
@@ -759,6 +763,10 @@
 
 <!-- BADGE DASHBOARD SCREEN -->
 <div id="screen-badges" class="screen">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <button class="btn-back" onclick="showScreen('badge-members')">←</button>
+    <span style="font-size:13px;font-weight:700;color:var(--text-muted)">Badge Progress</span>
+  </div>
   <div class="hero-card" style="margin-bottom:16px">
     <div class="hero-greeting">Badge Progress</div>
     <div class="hero-name" id="badge-member-name">Loading…</div>
@@ -772,7 +780,10 @@
 
 <!-- MEMBER LIST FOR BADGES (leader view) -->
 <div id="screen-badge-members" class="screen">
-  <div class="section-label">Select a member</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <button class="btn-back" onclick="showTab('badges')">←</button>
+    <span style="font-size:13px;font-weight:700;color:var(--text-muted)">Select a member</span>
+  </div>
   <div id="badge-member-list"></div>
 </div>
 
@@ -801,9 +812,9 @@
 <div id="screen-chat-view" class="chat-screen">
   <div class="chat-header">
     <button class="chat-back" onclick="closeChatView()">←</button>
-    <div style="flex:1;min-width:0">
-      <h2 id="chat-view-title">Channel</h2>
-      <p id="chat-view-meta"></p>
+    <div style="flex:1;min-width:0;overflow:hidden">
+      <h2 id="chat-view-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Channel</h2>
+      <p id="chat-view-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
     </div>
     <div id="chat-view-badges"></div>
   </div>
