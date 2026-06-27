@@ -1951,10 +1951,16 @@ const SCREEN_MAP = {
   chat: 'chat', badges: 'badge-members'
 };
 
+// Current active tab root — used as fallback when back stack empties
+let currentTab = 'home';
+
 function showTab(tab) {
-  // Tab bar resets stack to just this tab's root screen
+  currentTab = tab;
   const screen = SCREEN_MAP[tab] || tab;
+
+  // Reset stack with home as base + this tab's root
   NAV_STACK.length = 0;
+  if (tab !== 'home') NAV_STACK.push('home');
   NAV_STACK.push(screen);
 
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1962,9 +1968,6 @@ function showTab(tab) {
   if (navEl) navEl.classList.add('active');
 
   _showScreen(screen);
-  // Replace current history state (tab switches don't stack)
-  history.replaceState({ screen, tab }, '', '');
-  // Push a duplicate so first back stays in app
   history.pushState({ screen, tab }, '', '');
 
   if (tab === 'chat')   loadChannels();
@@ -1989,7 +1992,6 @@ function goBack() {
   const prev = NAV_STACK[NAV_STACK.length - 1];
   if (prev) {
     _showScreen(prev);
-    history.replaceState({ screen: prev }, '', '');
     history.pushState({ screen: prev }, '', '');
   } else {
     showTab('home');
@@ -1997,28 +1999,27 @@ function goBack() {
 }
 
 // Intercept browser/device back button
-window.addEventListener('popstate', (e) => {
-  // Chat overlay — close it
+window.addEventListener('popstate', () => {
+  // Chat overlay — close it first
   const chatView = document.getElementById('screen-chat-view');
   if (chatView && chatView.classList.contains('active')) {
     closeChatView();
-    history.pushState({}, '', ''); // keep in app
+    history.pushState({}, '', '');
     return;
   }
 
-  // Navigate back in stack
   if (NAV_STACK.length > 1) {
     NAV_STACK.pop();
     const prev = NAV_STACK[NAV_STACK.length - 1];
     _showScreen(prev);
     history.pushState({ screen: prev }, '', '');
   } else {
-    // At root — re-push to prevent app exit
+    // At root (home) — stay in app
     history.pushState({}, '', '');
   }
 });
 
-// Initial state — gives us one history entry to catch the first back
+// Base history entry
 history.replaceState({ screen: 'home' }, '', '');
 
 // ── LOGOUT ────────────────────────────────────────────────────
