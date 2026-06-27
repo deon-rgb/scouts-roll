@@ -158,21 +158,27 @@ async function handleLogin(request, env) {
       }
     } catch(_) {}
 
-    if (!terrainGuid) {
-      try {
-        const profileRes = await fetch(
-          `${TERRAIN_MEMBERS}/members/${memberNumber}`,
-          { headers: { Authorization: idToken } }
+    // Also fetch profile from Terrain to get duty/role and fill any gaps
+    let terrainRole = 'member'; // default to youth member
+    try {
+      const profileRes = await fetch(
+        `${TERRAIN_MEMBERS}/members/${terrainGuid || memberNumber}`,
+        { headers: { Authorization: idToken } }
+      );
+      if (profileRes.ok) {
+        const pd    = await profileRes.json();
+        if (!terrainGuid) terrainGuid = pd.id || null;
+        firstName   = firstName || pd.first_name || '';
+        lastName    = lastName  || pd.last_name  || '';
+        // Determine role from units duty field
+        const units = pd.units || [];
+        const isLeader = units.some(u =>
+          u.duty === 'adult_leader' || u.duty === 'leader' || u.duty?.includes('adult')
         );
-        if (profileRes.ok) {
-          const pd    = await profileRes.json();
-          terrainGuid = pd.id || null;
-          firstName   = pd.first_name || firstName;
-          lastName    = pd.last_name  || lastName;
-        }
-      } catch(e) {
-        console.log('Profile fetch failed:', e.message);
+        terrainRole = isLeader ? 'leader' : 'member';
       }
+    } catch(e) {
+      console.log('Profile fetch failed:', e.message);
     }
 
     if (!terrainGuid) {
@@ -225,7 +231,7 @@ async function handleLogin(request, env) {
     // 6. Store auth token
     const expiresAt   = new Date(Date.now() + 3600 * 1000).toISOString();
     const unitIdsJson = JSON.stringify(unitIds);
-    const role        = 'leader';
+    const role        = terrainRole;
 
     await env.scouts_db.prepare(
       `INSERT OR REPLACE INTO auth_tokens
@@ -590,8 +596,7 @@ async function handleSync(request, env, member) {
 }
 
 // ── NIGHTLY SYNC ─────────────────────────────────────────────
-// Refreshes events from Terrain. Attendance is pushed live on save,
-// so no retry queue needed here.
+// Refreshes events from Terrain and enforces message retention policy.
 async function runNightlySync(env) {
   const latest = await env.scouts_db.prepare(
     `SELECT token, terrain_member_id FROM auth_tokens
@@ -601,6 +606,16 @@ async function runNightlySync(env) {
   if (latest?.terrain_member_id) {
     await syncEventsFromTerrain(latest.terrain_member_id, latest.token, env)
       .catch(e => console.log('Nightly event sync error:', e.message));
+  }
+
+  // Auto-delete messages older than 2 years (child data retention policy)
+  try {
+    const result = await env.scouts_db.prepare(
+      `DELETE FROM messages WHERE sent_at < datetime('now', '-2 years')`
+    ).run();
+    console.log(`Message retention: deleted ${result.changes} old messages`);
+  } catch(e) {
+    console.log('Message retention error:', e.message);
   }
 }
 
@@ -706,6 +721,16 @@ async function pushAttendanceToTerrain(syncToken, env) {
 async function handleChat(path, method, request, url, env, member) {
   const parts = path.split('/').filter(Boolean);
 
+  // Youth members need chat_consent before accessing chat
+  if (member.role !== 'leader') {
+    const memberRow = await env.scouts_db.prepare(
+      `SELECT chat_consent FROM members WHERE id = ?`
+    ).bind(member.terrain_member_id).first();
+    if (!memberRow?.chat_consent) {
+      return err('Chat access requires parental consent. Please speak to your leader.', 403);
+    }
+  }
+
   if (parts[1] === 'channels' && method === 'GET' && parts.length === 2)
     return getChatChannels(env, member);
   if (parts[1] === 'channels' && method === 'POST' && parts.length === 2)
@@ -766,6 +791,16 @@ async function createChannel(request, env, member) {
   if (!validTypes.includes(type)) return err('Invalid channel type');
   if ((type === 'unit' || type === 'leaders') && !isSupervisor(member))
     return err('Only leaders can create this channel type', 403);
+
+  // 2-up rule: leaders cannot create 1:1 direct channels with a single youth member
+  if (type === 'direct' && isSupervisor(member) && member_ids?.length === 1) {
+    const otherMember = await env.scouts_db.prepare(
+      `SELECT role FROM members WHERE id = ?`
+    ).bind(member_ids[0]).first();
+    if (otherMember?.role === 'member') {
+      return err('Direct channels between a single leader and youth member are not permitted. A second leader must be included.', 403);
+    }
+  }
 
   const channelId = generateId();
   const senderId  = member.terrain_member_id || member.member_id;
