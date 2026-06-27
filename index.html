@@ -709,6 +709,21 @@
     <div class="home-subtitle" id="home-subtitle">Princes Park Scout Group</div>
   </div>
 
+  <!-- Next event card — rendered by renderNextEvent() -->
+  <div id="home-next-event" style="display:none;margin:12px 16px 0;background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1.5px solid var(--border)">
+    <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Next meeting</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div id="home-next-date" style="width:44px;height:44px;border-radius:10px;background:var(--navy);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="font-size:16px;font-weight:800;line-height:1" id="home-next-day">–</div>
+        <div style="font-size:10px;font-weight:600;opacity:0.8" id="home-next-mon">–</div>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)" id="home-next-title">–</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="home-next-meta">–</div>
+      </div>
+    </div>
+  </div>
+
   <div class="home-grid" id="home-grid">
     <!-- Tiles rendered by renderHomeTiles() based on role -->
   </div>
@@ -793,7 +808,12 @@
   <div class="card">
     <div class="card-title" style="margin-bottom:12px">Account</div>
     <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px" id="profile-member-id">–</div>
-    <div style="font-size:14px;color:var(--text-muted)" id="profile-unit-id">–</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px" id="profile-unit-id">–</div>
+    <div style="font-size:14px;color:var(--text-muted)" id="profile-sections">–</div>
+  </div>
+  <div class="card" id="profile-sections-card" style="margin-top:12px;display:none">
+    <div class="card-title" style="margin-bottom:12px">My sections</div>
+    <div id="profile-sections-list"></div>
   </div>
   <button class="btn btn-danger" onclick="doLogout()" style="margin-top:8px">Sign out</button>
 </div>
@@ -1679,6 +1699,19 @@ function enterApp() {
   document.getElementById('profile-role').textContent    = state.role === 'leader' ? 'Leader' : 'Youth Member';
   document.getElementById('profile-member-id').textContent = 'Member ID: ' + state.memberId;
   document.getElementById('profile-unit-id').textContent   = 'Unit: ' + state.unitId;
+
+  // Show sections in profile
+  const SECTION_NAMES = {
+    '6ed6a27f': 'Joeys', 'a1fb7ab1': 'Cubs',
+    '054bc5df': 'Scouts', 'c5bfe4a0': 'Venturers', '6fe441ab': 'Rovers',
+  };
+  const sectionsList = document.getElementById('profile-sections-list');
+  const sectionsCard = document.getElementById('profile-sections-card');
+  if (sectionsList && state.unitIds?.length) {
+    const names = state.unitIds.map(id => SECTION_NAMES[id.slice(0,8)] || id.slice(0,8)).filter(Boolean);
+    sectionsList.innerHTML = names.map(n => `<div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border);color:var(--text)">${n}</div>`).join('');
+    if (sectionsCard) sectionsCard.style.display = 'block';
+  }
   document.getElementById('home-name').textContent = (state.name && !state.name.startsWith('vic-')) ? state.name.split(' ')[0] : 'Leader';
 
   // Sync unit selector to logged-in user's unit
@@ -1835,6 +1868,7 @@ async function loadEvents() {
     state.events = data.results || [];
     renderHomeEvents();
     renderRollEvents();
+    renderNextEvent();
     const countEl = document.getElementById('home-events-count');
     if (countEl) countEl.textContent = state.events.length;
   } catch(e) {
@@ -1859,6 +1893,30 @@ async function loadMembers() {
 }
 
 // ── RENDER HOME ───────────────────────────────────────────────
+function renderNextEvent() {
+  const card = document.getElementById('home-next-event');
+  if (!card) return;
+  const upcoming = state.events
+    .filter(e => e.status === 'upcoming' && new Date(e.start_datetime) > new Date())
+    .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+  if (!upcoming.length) { card.style.display = 'none'; return; }
+  const ev = upcoming[0];
+  const d  = new Date(ev.start_datetime);
+  const SECTION_COLORS = {
+    '6ed6a27f': '#C8830A', 'a1fb7ab1': '#B45309',
+    '054bc5df': '#166534', 'c5bfe4a0': '#6B21A8', '6fe441ab': '#991B1B',
+  };
+  const col = SECTION_COLORS[(ev.unit_id||'').slice(0,8)] || 'var(--navy)';
+  document.getElementById('home-next-day').textContent  = d.getDate();
+  document.getElementById('home-next-mon').textContent  = d.toLocaleString('en-AU',{month:'short'});
+  document.getElementById('home-next-date').style.background = col;
+  document.getElementById('home-next-title').textContent = ev.title || 'Meeting';
+  document.getElementById('home-next-meta').textContent  =
+    d.toLocaleString('en-AU',{weekday:'short',hour:'numeric',minute:'2-digit',hour12:true}) +
+    (ev.location ? ' · ' + ev.location : '');
+  card.style.display = 'block';
+}
+
 function renderHomeEvents() {
   const list   = document.getElementById('home-events-list');
   if (!list) return; // home screen no longer has this element
@@ -2086,7 +2144,8 @@ function toggleMember(id) {
 }
 
 function markAll(val) {
-  if (state.currentEvent?.status === 'concluded') return;
+  // Block if concluded AND not in edit mode
+  if (state.currentEvent?.status === 'concluded' && !state.rollEditMode) return;
   state.members.forEach(m => { state.attendance[m.id] = val; });
   renderMemberList();
   updateAttCount();
