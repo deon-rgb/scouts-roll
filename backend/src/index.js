@@ -590,7 +590,8 @@ async function handleSync(request, env, member) {
 }
 
 // ── NIGHTLY SYNC ─────────────────────────────────────────────
-// Retries attendance that failed to push live, and refreshes events.
+// Refreshes events from Terrain. Attendance is pushed live on save,
+// so no retry queue needed here.
 async function runNightlySync(env) {
   const latest = await env.scouts_db.prepare(
     `SELECT token, terrain_member_id FROM auth_tokens
@@ -601,8 +602,6 @@ async function runNightlySync(env) {
     await syncEventsFromTerrain(latest.terrain_member_id, latest.token, env)
       .catch(e => console.log('Nightly event sync error:', e.message));
   }
-
-  await pushAttendanceToTerrain(latest?.token || null, env);
 }
 
 // ── PUSH ATTENDANCE TO TERRAIN (retry queue) ──────────────────
