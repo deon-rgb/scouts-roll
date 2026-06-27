@@ -439,3 +439,38 @@ cd ~/scouts-roll && cat >> DEVLOG.md << 'EOF'
 - Keyword monitoring ✅
 - Leader sees all flags across all channels ✅
 
+
+---
+
+## Session log: 2026-06-27 (afternoon)
+
+**Navigation overhaul:**
+- Replaced bottom nav bar with home grid launcher (tiles per feature)
+- Added fixed "← Home" bar on all non-home screens
+- Implemented History API (NAV_STACK) so browser/device back button works within app
+- Added back buttons (goBack()) to all sub-screens
+
+**Roll call section redesigned:**
+- Added section picker screen (screen-roll-section) — tiles for Joeys, Cubs, Scouts, Venturers + All sections
+- Section colours from official Scouts Australia scheme (tawny/yellow/green/maroon/red)
+- Event date blocks now colour-coded by section
+- Unit dropdown replaced by section tile picker
+- state.unitIds added to track all units a leader manages
+
+**Known bug (in progress):**
+- Events spinner doesn't resolve after selecting a section
+- Root cause: loadEvents() crashes because home-events-count, home-events-list, home-members-count DOM elements were removed when home screen was redesigned, but JS still references them
+- Fix written (guard with null checks) but not yet confirmed working
+
+**Chat safety:**
+- Role assignment fixed — youth get role:member from Terrain duty field  
+- chat_consent flag added to members table
+- 2-year auto-delete added to nightly cron
+- No 1:1 adult-youth direct channel enforcement
+
+**Outstanding bugs:**
+1. Events spinner — fix in progress
+2. Clear All button on roll call not working
+3. Back button behaviour needs testing on installed PWA
+4. Section picker may show all sections before state.unitIds is populated
+
