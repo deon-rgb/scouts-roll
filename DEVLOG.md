@@ -336,3 +336,29 @@ Systematic mapping of all Terrain API endpoints using live token from D1. Key di
 - Dual-membership youth pre-tick
 
 ---
+
+---
+
+## Session log: 2026-06-27
+
+**Attendance PATCH to Terrain now fully working.**
+
+Root cause: Terrain requires the complete event object in the PATCH body — not just attendance fields. Sending only `attendee_member_ids` + `participant_member_ids` resulted in a 502 or silent wipe. Fix: GET the full event first, update only the attendance fields, then PATCH the whole object back.
+
+Key discoveries:
+1. Terrain's own UI sends the entire event object in its PATCH — title, description, dates, review, achievement data, organisers, attendance all included
+2. `review` field is required — sending without it returns 400
+3. `attendee_member_ids` and `participant_member_ids` should be the same list (who attended)
+4. Finalised events don't need an unlock API call — Edit button in Terrain UI is purely a local state change
+5. Terrain UI caches aggressively — navigate away and back to see updated attendance
+
+**Attendance sync is now confirmed working end to end:**
+- Leader takes roll in app
+- App saves locally + immediately PATCHes Terrain with full event object
+- Terrain reflects correct attendance after page navigation refresh
+
+**Outstanding:**
+- Two-way sync (changes in Terrain → App) still not built
+- Badge dashboard UX/design pass needed
+- Chat end-to-end test
+- Nightly retry queue uses old PATCH format — needs same fix applied to `pushAttendanceToTerrain`
