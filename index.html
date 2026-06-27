@@ -1635,7 +1635,8 @@ async function doLogin() {
     // Save session
     localStorage.setItem('scouts_session', JSON.stringify({
       token: state.token, memberId: state.memberId,
-      unitId: state.unitId, selectedUnitId: state.selectedUnitId,
+      unitId: state.unitId, unit_ids: state.unitIds,
+      selectedUnitId: state.selectedUnitId,
       role: state.role, name: state.name,
       terrainMemberId: state.terrainMemberId,
     }));
