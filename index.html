@@ -247,7 +247,7 @@
   .hero-stat .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
 
   /* ── EVENT CARDS ────────────────────────────────────────── */
-  /* ── SECTION PICKER ──────────────────────────────── */
+  /* ── SECTION PICKER ─────────────────────────────── */
   .section-tile {
     display: flex; align-items: center; gap: 14px;
     background: white; border-radius: 14px;
@@ -262,7 +262,7 @@
   .section-tile-name { font-size: 16px; font-weight: 700; color: var(--navy); }
   .section-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-    .event-card {
+  .event-card {
     background: var(--surface);
     border-radius: var(--radius);
     padding: 16px;
@@ -732,6 +732,15 @@
   <div id="roll-events-list">
     <div class="loading-block"><div class="spinner dark"></div><p>Loading events…</p></div>
   </div>
+  <!-- Keep hidden unit-selector for compatibility -->
+  <select id="unit-selector" style="display:none" onchange="onUnitChange()">
+    <option value="054bc5df-bb9d-4ef9-a041-1a22518c4d1a">Scouts</option>
+    <option value="6ed6a27f-e76e-49b7-ad20-d8143d37dbe3">Joeys</option>
+    <option value="a1fb7ab1-96d2-4b02-b3e8-fc0bed99142b">Cubs</option>
+    <option value="c5bfe4a0-9734-4b73-b544-99bb0bd42716">Venturers</option>
+    <option value="6fe441ab-1382-406a-bbf8-aeb6a03b86c1">Rovers</option>
+    <option value="all">All sections</option>
+  </select>
 </div>
 
 <!-- ROLL TAKING -->
@@ -1575,6 +1584,7 @@ let state = {
   token:    null,
   memberId: null,
   unitId:   null,
+  unitIds:  [],
   selectedUnitId: null,   // currently viewed unit in roll tab
   role:     null,
   name:     null,
@@ -1615,6 +1625,8 @@ async function doLogin() {
     state.token           = data.token;
     state.memberId        = data.member_id;
     state.unitId          = data.unit_id;
+  state.unitIds         = data.unit_ids || (data.unit_id ? [data.unit_id] : []);
+  state.unitIds         = data.unit_ids || (data.unit_id ? [data.unit_id] : []);
     state.selectedUnitId  = data.unit_id;  // default to own unit
     state.role            = data.role;
     state.name            = data.name || data.member_id; // comes from members API now
@@ -1763,50 +1775,40 @@ function renderSectionPicker() {
   const list = document.getElementById('section-picker-list');
   if (!list) return;
 
-  // Only show sections this leader manages
-  let unitIds = [];
-  try { unitIds = JSON.parse(localStorage.getItem('scouts_session') ? JSON.parse(localStorage.getItem('scouts_session')).unit_ids || '[]' : '[]'); } catch(_) {}
+  const unitIds = state.unitIds || [];
+  const visible = unitIds.length
+    ? SECTIONS.filter(s => unitIds.some(uid => uid.startsWith(s.id.slice(0,8))))
+    : SECTIONS;
 
-  const visibleSections = SECTIONS.filter(s => unitIds.includes(s.id));
-
-  list.innerHTML = visibleSections.map(s => `
-    <div class="section-tile" onclick="selectSection('${s.id}', '${s.name}', '${s.color}')" style="border-color:${s.color}20">
-      <div class="section-tile-icon" style="background:${s.bg}">
-        <span style="font-size:22px">${s.emoji}</span>
-      </div>
-      <div>
+  list.innerHTML = visible.map(s => `
+    <div class="section-tile" onclick="selectSection('${s.id}','${s.name}','${s.color}')" style="border-color:${s.color}30">
+      <div class="section-tile-icon" style="background:${s.bg}">${s.emoji}</div>
+      <div style="flex:1">
         <div class="section-tile-name">${s.name}</div>
         <div class="section-tile-desc">${s.ages}</div>
       </div>
-      <div style="margin-left:auto;color:#9CA3AF;font-size:20px">›</div>
+      <div style="color:#9CA3AF;font-size:20px">›</div>
     </div>
   `).join('') + `
-    <div class="section-tile" onclick="selectSection('all', 'All sections', 'var(--navy)')" style="border-color:#E5E7EB">
-      <div class="section-tile-icon" style="background:#F3F4F6">
-        <span style="font-size:22px">👥</span>
-      </div>
-      <div>
+    <div class="section-tile" onclick="selectSection('all','All sections','#00348D')" style="border-color:#E5E7EB">
+      <div class="section-tile-icon" style="background:#F3F4F6">👥</div>
+      <div style="flex:1">
         <div class="section-tile-name">All sections</div>
         <div class="section-tile-desc">View all events</div>
       </div>
-      <div style="margin-left:auto;color:#9CA3AF;font-size:20px">›</div>
+      <div style="color:#9CA3AF;font-size:20px">›</div>
     </div>
   `;
 }
 
 function selectSection(unitId, name, color) {
   state.selectedUnitId = unitId;
-
-  // Update header
   const dot   = document.getElementById('roll-section-dot');
   const label = document.getElementById('roll-section-label');
-  if (dot)   dot.style.background   = color;
-  if (label) label.textContent      = name;
-
-  // Also sync the hidden unit-selector for compatibility
+  if (dot)   dot.style.background = color;
+  if (label) label.textContent    = name;
   const sel = document.getElementById('unit-selector');
   if (sel) sel.value = unitId;
-
   showScreen('roll-list');
   Promise.all([loadEvents(), loadMembers()]);
 }
@@ -1902,16 +1904,15 @@ function eventCardHTML(ev, compact) {
 
   const onclick = state.role === 'leader' ? `selectEvent('${ev.id}')` : '';
 
-  // Section colour for date block
   const SECTION_COLORS = {
-    '6ed6a27f': '#C8830A', // Joeys — tawny
-    'a1fb7ab1': '#B45309', // Cubs — yellow/brown
-    '054bc5df': '#166534', // Scouts — green
-    'c5bfe4a0': '#6B21A8', // Venturers — maroon/purple
-    '6fe441ab': '#991B1B', // Rovers — red
+    '6ed6a27f': '#C8830A', '6ed6a27f-e76': '#C8830A',
+    'a1fb7ab1': '#B45309',
+    '054bc5df': '#166534',
+    'c5bfe4a0': '#6B21A8',
+    '6fe441ab': '#991B1B',
   };
-  const unitShort = (ev.unit_id || '').slice(0, 8);
-  const dateColor = SECTION_COLORS[unitShort] || 'var(--navy)';
+  const unitShort  = (ev.unit_id || '').slice(0,8);
+  const dateColor  = SECTION_COLORS[unitShort] || 'var(--navy)';
 
   return `<div class="event-card ${concluded && !hasAtt ? 'roll-missing' : ''}" onclick="${onclick}">
     <div class="event-date" style="background:${dateColor}">
@@ -2306,6 +2307,7 @@ function restoreSession() {
       state.token           = s.token;
       state.memberId        = s.memberId;
       state.unitId          = s.unitId;
+      state.unitIds         = s.unit_ids || (s.unitId ? [s.unitId] : []);
       state.selectedUnitId  = s.selectedUnitId || s.unitId;
       state.role            = s.role;
       state.name            = s.name;
