@@ -800,12 +800,22 @@
   <section class="card card-big">
     <div class="section-title mt-0">Account</div>
     <div class="row-list">
-      <div class="row"><div class="row-main"><div class="row-title" id="profile-member-id">–</div></div></div>
-      <div class="row"><div class="row-main"><div class="row-title" id="profile-unit-id">–</div></div></div>
+      <div class="row">
+        <div class="row-main">
+          <div class="row-title">Member ID</div>
+          <div class="row-sub" id="profile-member-id">–</div>
+        </div>
+      </div>
       <div class="row" id="profile-sections-card" style="display:none">
         <div class="row-main">
           <div class="row-title">Sections</div>
           <div class="row-sub" id="profile-sections-list">–</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="row-main">
+          <div class="row-title">Role</div>
+          <div class="row-sub" id="profile-role-display">–</div>
         </div>
       </div>
     </div>
@@ -837,7 +847,12 @@
   <section class="primary-panel">
     <p class="eyebrow" style="color:#c7d6ff">Badge progress</p>
     <h1 class="screen-title" id="badge-member-name">Loading…</h1>
-    <p class="screen-subtitle" style="margin-bottom:24px" id="badge-section"></p>
+    <p class="screen-subtitle" style="margin-bottom:16px" id="badge-section"></p>
+    <div class="stat-grid" id="badge-stat-grid" style="display:none">
+      <div class="stat"><b id="badge-stat-ready">–</b><span>awarded</span></div>
+      <div class="stat"><b id="badge-stat-active">–</b><span>active</span></div>
+      <div class="stat"><b id="badge-stat-pct">–</b><span>next</span></div>
+    </div>
   </section>
 
   <div id="badge-content">
@@ -1429,15 +1444,19 @@ function renderBadgeMemberList() {
     return;
   }
   list.innerHTML = state.members.map(m => {
-    const name = m.first_name + ' ' + m.last_name;
+    const name     = m.first_name + ' ' + m.last_name;
     const initials = ((m.first_name||'')[0]||'').toUpperCase() + ((m.last_name||'')[0]||'').toUpperCase();
     const safeId   = (m.id   || '').replace(/'/g, '');
     const safeName = (name  || '').replace(/'/g, '');
-    return '<div class="member-select-row" onclick="loadMemberBadges(\'' + safeId + '\', \'' + safeName + '\')">' +
-      '<div class="member-avatar" style="width:40px;height:40px;font-size:15px">' + initials + '</div>' +
-      '<div><div style="font-size:15px;font-weight:600">' + safeName + '</div>' +
-      (m.patrol ? '<div style="font-size:12px;color:var(--text-muted)">' + m.patrol + '</div>' : '') +
-      '</div><div style="color:var(--text-muted);font-size:20px">&#8250;</div></div>';
+    const sub      = m.patrol ? 'Scouts · ' + m.patrol : 'Scouts';
+    return '<div class="row" style="cursor:pointer;min-height:78px" onclick="loadMemberBadges(\'' + safeId + '\', \'' + safeName + '\')">' +
+      '<div class="initials">' + initials + '</div>' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + safeName + '</div>' +
+        '<div class="row-sub">' + sub + '</div>' +
+      '</div>' +
+      '<span class="chevron">›</span>' +
+    '</div>';
   }).join('');
 }
 
@@ -1461,121 +1480,174 @@ async function loadMemberBadges(memberId, memberName) {
 
 function renderBadgePlaceholder(name) {
   document.getElementById('badge-section').textContent = '';
+  const statGrid = document.getElementById('badge-stat-grid');
+  if (statGrid) statGrid.style.display = 'none';
   document.getElementById('badge-content').innerHTML =
-    '<div class="next-badge-card">' +
-    '<h3>No achievements found</h3>' +
-    '<p>No badge progress found for this member in Terrain.</p>' +
-    '<div class="next-actions">Keep attending meetings and completing activities in Terrain ✓</div>' +
-    '</div>';
+    '<div style="height:18px"></div>' +
+    '<section class="card card-big" style="text-align:center">' +
+      '<div style="font-size:40px;margin-bottom:12px">🏅</div>' +
+      '<div class="row-title">No achievements found</div>' +
+      '<p class="row-sub" style="margin-top:6px;white-space:normal">No badge progress found for this member in Terrain. Keep attending meetings and completing activities.</p>' +
+    '</section>';
 }
 
 function renderBadgeDashboard(achievements, memberName) {
-  // Terrain types: outdoor_adventure_skill, milestone, special_interest_area,
-  // adventurous_journey, intro_section, intro_scouting, course_reflection,
-  // personal_reflection, additional_award, peak_award
-
   const oasItems   = achievements.filter(function(a) { return a.type === 'outdoor_adventure_skill'; });
   const milestones = achievements.filter(function(a) { return a.type === 'milestone'; });
   const siaItems   = achievements.filter(function(a) { return a.type === 'special_interest_area'; });
   const ajItems    = achievements.filter(function(a) { return a.type === 'adventurous_journey'; });
   const peakAwards = achievements.filter(function(a) { return a.type === 'peak_award' && a.status === 'awarded'; });
 
-  // Derive section from milestone or OAS data
   const sectionAch = milestones[0] || oasItems[0];
   const section    = sectionAch?.achievement_meta?.section || '';
   document.getElementById('badge-section').textContent =
     section ? section.charAt(0).toUpperCase() + section.slice(1) + ' Unit' : '';
 
+  const awardedCount = achievements.filter(function(a) { return a.status === 'awarded'; }).length;
+  const activeCount  = achievements.filter(function(a) {
+    return a.status === 'in_progress' || a.status === 'draft_review' || a.status === 'feedback_review';
+  }).length;
+
+  // Build OAS map: stream → { stage → status }
+  const oasMap = {};
+  oasItems.forEach(function(a) {
+    const stream = a.achievement_meta?.stream;
+    const stage  = a.achievement_meta?.stage;
+    if (!stream || !stage) return;
+    if (!oasMap[stream]) oasMap[stream] = {};
+    oasMap[stream][stage] = a.status;
+  });
+
+  // Find best OAS stream for "next best action"
+  let bestPct = 0, bestStream = null, bestStage = 1;
+  Object.keys(oasMap).forEach(function(stream) {
+    const info     = OAS_STREAMS[stream] || { name: stream, icon: '🏕️', maxStage: 5 };
+    const maxStage = Math.max(info.maxStage, ...Object.keys(oasMap[stream]).map(Number));
+    const awd      = Object.values(oasMap[stream]).filter(function(s) { return s === 'awarded'; }).length;
+    const pct      = Math.round(awd / maxStage * 100);
+    if (pct > bestPct) {
+      bestPct    = pct;
+      bestStream = stream;
+      const ipKey = Object.keys(oasMap[stream]).find(function(k) {
+        const s = oasMap[stream][k];
+        return s === 'in_progress' || s === 'draft_review' || s === 'feedback_review';
+      });
+      bestStage = ipKey ? parseInt(ipKey) : awd + 1;
+    }
+  });
+
+  // Show stats in hero panel
+  const statGrid = document.getElementById('badge-stat-grid');
+  if (statGrid) {
+    document.getElementById('badge-stat-ready').textContent  = awardedCount;
+    document.getElementById('badge-stat-active').textContent = activeCount;
+    document.getElementById('badge-stat-pct').textContent    = bestPct ? bestPct + '%' : '–';
+    statGrid.style.display = '';
+  }
+
   let html = '';
 
   // Peak award
   if (peakAwards.length) {
-    html += '<div class="next-badge-card" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000">' +
-      '<h3>🏆 ' + peakAwards.map(function(a) { return a.achievement_meta?.peak_award || 'Peak Award'; }).join(', ') + '</h3>' +
-      '<p>Awarded</p></div>';
+    html += '<div class="section-title">Peak Award</div>' +
+      '<section class="card card-big" style="background:linear-gradient(140deg,var(--brand-navy),var(--brand-dark-blue));border-color:rgba(255,255,255,.15)">' +
+        '<div style="font-size:36px;margin-bottom:10px">🏆</div>' +
+        '<div class="row-title" style="font-size:20px">' + peakAwards.map(function(a) { return a.achievement_meta?.peak_award || 'Peak Award'; }).join(', ') + '</div>' +
+        '<div class="row-sub" style="margin-top:4px">Awarded</div>' +
+      '</section>';
+  }
+
+  // Next best action card
+  if (bestStream) {
+    const info = OAS_STREAMS[bestStream] || { name: bestStream.replace(/_/g, ' '), icon: '🏕️', maxStage: 5 };
+    html += '<div class="section-title">Next best action</div>' +
+      '<section class="card card-big">' +
+        '<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start">' +
+          '<div>' +
+            '<div class="row-title">' + info.name + ' Stage ' + bestStage + '</div>' +
+            '<div class="row-sub" style="margin-top:3px">Current best progress stream</div>' +
+          '</div>' +
+          '<span class="pill good">Close</span>' +
+        '</div>' +
+        '<div class="progress-track" style="margin-top:16px"><div class="progress-fill" style="width:' + bestPct + '%"></div></div>' +
+      '</section>';
   }
 
   // Milestones
   if (milestones.length) {
-    html += '<div class="section-label">Milestones</div>';
-    milestones.sort(function(a, b) {
+    html += '<div class="section-title">Milestones</div><div class="row-list">';
+    milestones.slice().sort(function(a, b) {
       return (a.achievement_meta?.stage || 0) - (b.achievement_meta?.stage || 0);
     }).forEach(function(m) {
-      const stage    = m.achievement_meta?.stage || '?';
-      const status   = m.status || '';
-      const awarded  = status === 'awarded';
-      const inProg   = status === 'in_progress' || status === 'draft_review' || status === 'feedback_review';
-      const dot      = awarded ? '✅' : inProg ? '🔄' : '⬜';
-      const eventCnt = m.event_count ? (
-        'Community: ' + (m.event_count.participant?.community || 0) +
-        ' | Creative: ' + (m.event_count.participant?.creative || 0) +
-        ' | Outdoors: ' + (m.event_count.participant?.outdoors || 0) +
-        ' | Personal: ' + (m.event_count.participant?.personal_growth || 0)
-      ) : '';
-      html += '<div class="milestone-card">' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-        '<span style="font-size:20px">' + dot + '</span>' +
-        '<div><strong>Milestone ' + stage + '</strong>' +
-        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + (eventCnt || status) + '</div>' +
-        '</div></div></div>';
+      const stage  = m.achievement_meta?.stage || '?';
+      const status = m.status || '';
+      const awd    = status === 'awarded';
+      const ip     = status === 'in_progress' || status === 'draft_review' || status === 'feedback_review';
+      const pillCls = awd ? ' good' : ip ? ' warn' : '';
+      const pillTxt = awd ? 'Awarded' : ip ? 'In progress' : 'Not started';
+      const ec = m.event_count?.participant || {};
+      const parts = [];
+      if (ec.community)      parts.push(ec.community + ' community');
+      if (ec.creative)       parts.push(ec.creative + ' creative');
+      if (ec.outdoors)       parts.push(ec.outdoors + ' outdoors');
+      if (ec.personal_growth) parts.push(ec.personal_growth + ' personal');
+      const sub = parts.join(' · ');
+      html += '<div class="row">' +
+        '<div class="row-main">' +
+          '<div class="row-title">Milestone ' + stage + '</div>' +
+          (sub ? '<div class="row-sub">' + sub + '</div>' : '') +
+        '</div>' +
+        '<span class="pill' + pillCls + '">' + pillTxt + '</span>' +
+      '</div>';
     });
+    html += '</div>';
   }
 
-  // OAS
-  if (oasItems.length) {
-    // Build map: stream → { stage → status }
-    const oasMap = {};
-    oasItems.forEach(function(a) {
-      const stream = a.achievement_meta?.stream;
-      const stage  = a.achievement_meta?.stage;
-      if (!stream || !stage) return;
-      if (!oasMap[stream]) oasMap[stream] = {};
-      oasMap[stream][stage] = a.status;
-    });
-
-    html += '<div class="section-label">Outdoor Adventure Skills</div><div class="oas-grid">';
+  // OAS rows with progress bars
+  if (Object.keys(oasMap).length) {
+    html += '<div class="section-title">Outdoor Adventure Skills</div><div class="row-list">';
     Object.keys(oasMap).sort().forEach(function(stream) {
-      const info  = OAS_STREAMS[stream] || { name: stream.replace(/_/g, ' '), icon: '🏕️', maxStage: 5 };
-      const maxStage = Math.max(info.maxStage, Math.max(...Object.keys(oasMap[stream]).map(Number)));
-      const dots  = Array.from({length: maxStage}, function(_, i) {
-        const stage  = i + 1;
-        const status = oasMap[stream][stage] || '';
-        const cls    = status === 'awarded' ? 'awarded'
-                     : (status === 'in_progress' || status === 'draft_review' || status === 'feedback_review') ? 'pending'
-                     : 'empty';
-        return '<div class="stage-dot ' + cls + '">' + stage + '</div>';
-      }).join('');
-      html += '<div class="oas-stream">' +
-        '<div class="oas-stream-name">' + info.icon + ' ' + info.name + '</div>' +
-        '<div class="oas-stage-dots">' + dots + '</div></div>';
+      const info     = OAS_STREAMS[stream] || { name: stream.replace(/_/g, ' '), icon: '🏕️', maxStage: 5 };
+      const maxStage = Math.max(info.maxStage, ...Object.keys(oasMap[stream]).map(Number));
+      const awd      = Object.values(oasMap[stream]).filter(function(s) { return s === 'awarded'; }).length;
+      const highStage = Math.max(0, ...Object.keys(oasMap[stream]).filter(function(k) {
+        return oasMap[stream][k] === 'awarded';
+      }).map(Number));
+      const pct = Math.round(awd / maxStage * 100);
+      html += '<div class="row">' +
+        '<div class="row-main">' +
+          '<div class="row-title">' + info.icon + ' ' + info.name + '</div>' +
+          '<div class="row-sub" style="margin-top:3px">Stage ' + (highStage || '–') + ' · ' + awd + ' of ' + maxStage + ' complete</div>' +
+        '</div>' +
+        '<div style="width:88px">' +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+        '</div>' +
+      '</div>';
     });
     html += '</div>';
   }
 
   // SIA
   if (siaItems.length) {
-    const awarded = siaItems.filter(function(a) { return a.status === 'awarded'; });
-    const inProg  = siaItems.filter(function(a) { return a.status !== 'awarded'; });
-    html += '<div class="section-label">Special Interest Areas</div>';
-    if (awarded.length) {
-      html += '<div class="milestone-card">✅ Awarded: ' +
-        awarded.map(function(a) { return a.achievement_meta?.sia_area || 'SIA'; }).join(', ') + '</div>';
-    }
-    if (inProg.length) {
-      html += '<div class="milestone-card">🔄 In progress: ' +
-        inProg.map(function(a) { return a.achievement_meta?.sia_area || 'SIA'; }).join(', ') + '</div>';
-    }
+    html += '<div class="section-title">Special Interest Areas</div><div class="row-list">';
+    siaItems.forEach(function(a) {
+      const awd = a.status === 'awarded';
+      html += '<div class="row"><div class="row-main"><div class="row-title">' + (a.achievement_meta?.sia_area || 'SIA') + '</div></div>' +
+        '<span class="pill ' + (awd ? 'good' : 'warn') + '">' + (awd ? 'Awarded' : 'In progress') + '</span></div>';
+    });
+    html += '</div>';
   }
 
   // AJ
   if (ajItems.length) {
-    const awarded = ajItems.filter(function(a) { return a.status === 'awarded'; }).length;
-    html += '<div class="section-label">Adventurous Journey</div>' +
-      '<div class="milestone-card">' + (awarded ? '✅ ' + awarded + ' completed' : '🔄 In progress') + '</div>';
+    const awardedAJ = ajItems.filter(function(a) { return a.status === 'awarded'; }).length;
+    html += '<div class="section-title">Adventurous Journey</div><div class="row-list">' +
+      '<div class="row"><div class="row-main"><div class="row-title">Adventurous Journey</div></div>' +
+      '<span class="pill ' + (awardedAJ ? 'good' : 'warn') + '">' + (awardedAJ ? awardedAJ + ' complete' : 'In progress') + '</span></div></div>';
   }
 
   if (!html) {
-    html = '<div class="next-badge-card"><p>No badge progress to display yet.</p></div>';
+    html = '<div style="height:18px"></div><section class="card card-big" style="text-align:center"><p class="row-sub" style="padding:8px 0">No badge progress to display yet.</p></section>';
   }
 
   document.getElementById('badge-content').innerHTML = html;
@@ -1694,9 +1766,9 @@ function enterApp() {
   document.getElementById('header-avatar').textContent    = initials;
   document.getElementById('profile-avatar-lg').textContent = initials;
   document.getElementById('profile-name').textContent    = state.name;
-  document.getElementById('profile-role').textContent    = state.role === 'leader' ? 'Leader' : 'Youth Member';
-  document.getElementById('profile-member-id').textContent = 'Member ID: ' + state.memberId;
-  document.getElementById('profile-unit-id').textContent   = 'Unit: ' + state.unitId;
+  document.getElementById('profile-role').textContent         = state.role === 'leader' ? 'Leader' : 'Youth Member';
+  document.getElementById('profile-member-id').textContent    = state.memberId || '–';
+  document.getElementById('profile-role-display').textContent = state.role === 'leader' ? 'Leader' : 'Youth Member';
 
   // Show sections in profile
   const SECTION_NAMES = {
@@ -1707,7 +1779,7 @@ function enterApp() {
   const sectionsCard = document.getElementById('profile-sections-card');
   if (sectionsList && state.unitIds?.length) {
     const names = state.unitIds.map(id => SECTION_NAMES[id.slice(0,8)] || id.slice(0,8)).filter(Boolean);
-    sectionsList.innerHTML = names.map(n => `<div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border);color:var(--text)">${n}</div>`).join('');
+    sectionsList.textContent = names.join(', ');
     if (sectionsCard) sectionsCard.style.display = 'block';
   }
   document.getElementById('home-name').textContent = (state.name && !state.name.startsWith('vic-')) ? state.name.split(' ')[0] : 'Leader';
