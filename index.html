@@ -338,26 +338,18 @@
   .save-bar { position: sticky; bottom: 0; margin: 24px -20px 0; padding: 14px 20px max(20px,env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(7,11,29,0),rgba(7,11,29,.94) 20%,var(--bg)); display: flex; gap: 12px; }
 
   /* ── SUCCESS ────────────────────────────────────────────── */
-  .success-card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 40px 24px;
-    text-align: center;
-    box-shadow: var(--shadow);
-    margin-top: 20px;
-    border: 1px solid var(--border);
-  }
-  .success-icon { font-size: 64px; margin-bottom: 16px; }
-  .success-card h2 { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-  .success-card p  { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
   .success-detail {
-    background: var(--surface2); border-radius: var(--radius-sm);
-    padding: 14px 16px; margin: 20px 0; text-align: left;
-    border: 1px solid var(--border);
+    background: linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)),var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: 22px;
+    text-align: left;
+    margin: 28px 0;
   }
   .success-detail div { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
   .success-detail div:last-child { margin-bottom: 0; }
-  .success-detail .lbl { font-weight: 700; color: var(--text-muted); min-width: 70px; }
+  .success-detail .lbl { font-weight: 700; color: var(--muted); min-width: 70px; }
 
   /* ── LOADING ────────────────────────────────────────────── */
   .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
@@ -787,12 +779,16 @@
 
 <!-- SUCCESS -->
 <div id="screen-success" class="screen">
-  <div class="success-card">
-    <div class="success-icon">🎉</div>
-    <h2>Roll saved!</h2>
-    <p>Attendance queued to sync to Terrain tonight.</p>
-    <div class="success-detail" id="success-detail"></div>
-    <button class="btn btn-primary" onclick="showTab('roll')" style="margin-top:4px">Back to events</button>
+  <div style="min-height:80svh;display:grid;place-items:center;text-align:center">
+    <section>
+      <div style="width:88px;height:88px;border-radius:32px;background:rgba(12,174,75,.17);border:1px solid rgba(12,174,75,.38);display:grid;place-items:center;margin:0 auto 24px;color:#a8f0bf">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h1 class="screen-title">Roll saved</h1>
+      <p class="screen-subtitle">Attendance is ready to sync to Terrain.</p>
+      <div class="success-detail" id="success-detail"></div>
+      <button class="button primary full" onclick="showTab('roll')">Back to events</button>
+    </section>
   </div>
 </div>
 
