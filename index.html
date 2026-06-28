@@ -67,20 +67,6 @@
     /* Typography */
     --font: "Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-    /* Compatibility aliases — old names used by component CSS */
-    --navy:        var(--brand-navy);
-    --blue:        var(--action);
-    --green:       var(--good);
-    --surface2:    var(--surface-raised);
-    --text-muted:  var(--muted);
-    --border:      var(--line);
-    --red:         var(--bad);
-    --gold:        var(--warn);
-    --gold-light:  var(--warn);
-    --green-light: var(--good);
-    --radius:      var(--radius-lg);
-    --radius-btn:  var(--radius-sm);
-    --shadow-lg:   var(--shadow);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -107,7 +93,7 @@
     position: sticky;
     top: 0;
     z-index: 200;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--line);
   }
   .header-inner {
     display: flex;
@@ -119,7 +105,7 @@
   .header-mark {
     width: 34px; height: 34px;
     border-radius: 12px;
-    background: var(--blue);
+    background: var(--action);
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 18px; flex-shrink: 0;
   }
@@ -135,14 +121,14 @@
   }
   .header-left p {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--muted);
     margin-top: 1px;
   }
   .header-avatar {
     width: 38px; height: 38px;
     border-radius: 50%;
-    background: var(--surface2);
-    border: 2px solid var(--border);
+    background: var(--surface-raised);
+    border: 2px solid var(--line);
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; font-weight: 900;
     cursor: pointer; flex-shrink: 0;
@@ -154,7 +140,7 @@
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background: var(--surface);
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--line);
     display: flex;
     padding-bottom: env(safe-area-inset-bottom, 0);
     z-index: 200;
@@ -165,7 +151,7 @@
     align-items: center; justify-content: center;
     padding: 10px 4px;
     cursor: pointer;
-    color: var(--text-muted);
+    color: var(--muted);
     font-size: 10px; font-weight: 600;
     letter-spacing: 0.3px;
     text-transform: uppercase;
@@ -173,7 +159,7 @@
     transition: color 0.15s;
     user-select: none;
   }
-  .nav-item.active { color: var(--blue); }
+  .nav-item.active { color: var(--action); }
   .nav-icon { font-size: 22px; line-height: 1; }
 
   /* ── SCREENS ────────────────────────────────────────────── */
@@ -216,7 +202,7 @@
   @media (min-width: 760px) { .home-grid { grid-template-columns: repeat(4, 1fr); } }
   .home-tile { min-height: 144px; border: 1px solid var(--line); background: var(--surface); border-radius: 28px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; color: var(--text); box-shadow: var(--shadow-soft); transition: transform .14s ease; }
   .home-tile:active { transform: scale(0.985); }
-  .home-tile-icon { width: 42px; height: 42px; border-radius: 16px; background: var(--surface-raised); display: grid; place-items: center; font-size: 22px; line-height: 1; }
+  .home-tile-icon { width: 42px; height: 42px; border-radius: 16px; background: var(--surface-raised); display: grid; place-items: center; color: var(--muted); }
   .home-tile-name { font-size: 20px; line-height: 1.06; margin: 18px 0 4px; font-weight: 900; letter-spacing: -.025em; }
   .home-tile-desc { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.25; font-weight: 750; }
   .home-tile-badge { background: var(--bad); color: white; border-radius: var(--radius-sm); padding: 2px 7px; font-size: 11px; font-weight: 700; margin-top: 6px; display: inline-block; }
@@ -240,14 +226,6 @@
   .button.danger { background: rgba(222,42,38,.16); color: #ffb4ad; border: 1px solid rgba(222,42,38,.35); }
   .button.full { width: 100%; }
 
-  /* ── LEGACY BUTTONS (roll / success screens) ────────────── */
-  .btn { width: 100%; padding: 15px; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 900; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; }
-  .btn-primary { background: var(--action); color: white; }
-  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-danger { background: rgba(222,42,38,.15); color: #ffaaa5; border: 1px solid rgba(222,42,38,.3); margin-top: 8px; }
-  .btn-outline { background: transparent; border: 1.5px solid var(--line); color: var(--text); font-weight: 700; }
-
   .error-msg { background: rgba(222,42,38,.12); border: 1px solid rgba(222,42,38,.28); color: #ffaaa5; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 750; margin-bottom: 16px; display: none; }
   .error-msg.show { display: block; }
 
@@ -255,35 +233,6 @@
   .card { background: linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)),var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); margin-bottom: 12px; }
   .card-pad { padding: 22px; }
   .card-big { border-radius: var(--radius-xl); padding: 26px; }
-  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
-
-  /* ── SECTION LABEL ──────────────────────────────────────── */
-  .section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 10px; }
-
-  /* ── HERO CARD ──────────────────────────────────────────── */
-  .hero-card {
-    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
-    border-radius: var(--radius);
-    padding: 20px;
-    color: white;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero-card::after {
-    content: '⚜️';
-    position: absolute;
-    right: 16px; bottom: -4px;
-    font-size: 72px;
-    opacity: 0.1;
-  }
-  .hero-greeting { font-size: 13px; opacity: 0.7; margin-bottom: 4px; }
-  .hero-name { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 16px; }
-  .hero-stats { display: flex; gap: 20px; }
-  .hero-stat .num { font-size: 28px; font-weight: 800; line-height: 1; }
-  .hero-stat .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
-
   /* ── EVENT CARDS ────────────────────────────────────────── */
   /* ── SECTION CARD ───────────────────────────────── */
   .section-card { position: relative; overflow: hidden; min-height: 108px; border: 0; border-radius: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; color: white; background: var(--section); box-shadow: 0 18px 44px rgba(0,0,0,.24); cursor: pointer; width: 100%; font-family: inherit; }
@@ -304,9 +253,6 @@
   .date-badge { width: 58px; flex: 0 0 58px; background: var(--surface-raised); border: 1px solid var(--line); border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 6px; gap: 2px; }
   .date-badge b { font-size: 22px; line-height: 1; font-weight: 900; color: var(--text); }
   .date-badge span { font-size: 11px; text-transform: uppercase; font-weight: 900; color: var(--muted); letter-spacing: .04em; }
-  .event-date { width: 58px; height: 58px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .event-date .day { font-size: 22px; line-height: 1; font-weight: 900; color: white; }
-  .event-date .mon { font-size: 11px; text-transform: uppercase; font-weight: 900; color: rgba(255,255,255,.8); letter-spacing: .04em; }
   .event-info { flex: 1; min-width: 0; }
   .event-name { font-size: 17px; font-weight: 900; letter-spacing: -.015em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
   .event-meta { font-size: 13px; font-weight: 750; color: var(--muted); margin-top: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
@@ -334,43 +280,29 @@
   .member-row.present { border-color: rgba(12,174,75,.48); background: linear-gradient(180deg,rgba(12,174,75,.12),rgba(12,174,75,.04)),var(--surface); }
   .member-row:active { transform: scale(0.985); }
   /* .initials — design system avatar pill */
-  .initials, .member-avatar { width: 48px; height: 48px; border-radius: 17px; background: var(--surface-raised); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--text); flex: 0 0 auto; font-size: 15px; }
-  .member-row.present .initials, .member-row.present .member-avatar { background: rgba(12,174,75,.18); border-color: rgba(12,174,75,.35); color: #baf2cc; }
+  .initials { width: 48px; height: 48px; border-radius: 17px; background: var(--surface-raised); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--text); flex: 0 0 auto; font-size: 15px; }
+  .member-row.present .initials { background: rgba(12,174,75,.18); border-color: rgba(12,174,75,.35); color: #baf2cc; }
   .member-name { font-size: 17px; font-weight: 900; letter-spacing: -.015em; }
   .member-sub { font-size: 13px; font-weight: 750; color: var(--muted); margin-top: 3px; }
-  /* .toggle — design system sliding toggle (replaces .check-circle) */
-  .toggle, .check-circle { width: 64px; height: 40px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid var(--line); position: relative; flex: 0 0 auto; font-size: 0; }
-  .toggle::after, .check-circle::after { content: ""; position: absolute; top: 4px; left: 4px; width: 30px; height: 30px; border-radius: 50%; background: #7e8ba7; transition: all .16s; }
-  .member-row.present .toggle, .member-row.present .check-circle { background: var(--good); border-color: var(--good); }
-  .member-row.present .toggle::after, .member-row.present .check-circle::after { left: 28px; background: white; }
+  /* .toggle — design system sliding toggle */
+  .toggle { width: 64px; height: 40px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid var(--line); position: relative; flex: 0 0 auto; font-size: 0; }
+  .toggle::after { content: ""; position: absolute; top: 4px; left: 4px; width: 30px; height: 30px; border-radius: 50%; background: #7e8ba7; transition: all .16s; }
+  .member-row.present .toggle { background: var(--good); border-color: var(--good); }
+  .member-row.present .toggle::after { left: 28px; background: white; }
   /* .row.roll-missing — event card with outstanding roll */
   .row.roll-missing { border-color: rgba(255,198,46,.45); }
 
   /* Save footer — sticky bottom, JS shows/hides via .save-bar class */
   .save-bar { position: sticky; bottom: 0; margin: 24px -20px 0; padding: 14px 20px max(20px,env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(7,11,29,0),rgba(7,11,29,.94) 20%,var(--bg)); display: flex; gap: 12px; }
 
-  /* ── SUCCESS ────────────────────────────────────────────── */
-  .success-detail {
-    background: linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)),var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
-    padding: 22px;
-    text-align: left;
-    margin: 28px 0;
-  }
-  .success-detail div { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
-  .success-detail div:last-child { margin-bottom: 0; }
-  .success-detail .lbl { font-weight: 700; color: var(--muted); min-width: 70px; }
-
   /* ── LOADING ────────────────────────────────────────────── */
   .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
-  .spinner.dark { border-color: rgba(0,57,130,0.15); border-top-color: var(--navy); }
+  .spinner.dark { border-color: rgba(0,57,130,0.15); border-top-color: var(--brand-navy); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-block { text-align: center; padding: 48px 20px; }
-  .loading-block p { margin-top: 14px; color: var(--text-muted); font-size: 15px; }
+  .loading-block p { margin-top: 14px; color: var(--muted); font-size: 15px; }
 
-  .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .empty-state p { font-size: 15px; line-height: 1.5; }
 
@@ -389,8 +321,6 @@
   .channel-avatar.council { background: rgba(16,185,129,.18); }
   .channel-avatar.leaders { background: rgba(239,68,68,.18); }
   .channel-section { display: grid; gap: 12px; }
-  .tag-finite  { background: rgba(61,92,147,.28); border: 1px solid rgba(61,92,147,.45); color: #dbe8ff; }
-  .tag-flag    { background: rgba(222,42,38,.16); border: 1px solid rgba(222,42,38,.35); color: #ffaaa5; }
 
   /* ── CHAT — THREAD VIEW ─────────────────────────────────────── */
   .chat-screen {
@@ -499,9 +429,6 @@
     border-color: var(--brand-medium-blue);
     background: linear-gradient(180deg,rgba(61,92,147,.25),rgba(61,92,147,.08)),var(--surface);
   }
-  .type-btn .type-icon { display: block; font-size: 22px; margin-bottom: 8px; }
-  .type-btn .type-name { display: block; font-size: 16px; font-weight: 900; line-height: 1.1; color: var(--text); }
-  .type-btn .type-desc { display: block; color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 8px; }
   .type-btn b { display: block; font-size: 16px; font-weight: 900; line-height: 1.1; color: var(--text); }
   .type-btn span { display: block; color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 8px; }
 
@@ -509,79 +436,15 @@
   .sticky-footer { position: sticky; bottom: 0; margin: 24px -20px -36px; padding: 14px 20px max(20px,env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(7,11,29,0),rgba(7,11,29,.94) 20%,var(--bg)); display: flex; gap: 12px; }
   .sticky-footer .button { flex: 1; }
 
-  /* Flags badge */
+  /* Flags alert */
   .flag-alert {
-    background: #FEE2E2; border: 1px solid #FECACA;
+    background: rgba(222,42,38,.10); border: 1px solid rgba(222,42,38,.28);
     border-radius: var(--radius-sm); padding: 14px;
     margin-bottom: 10px; cursor: pointer;
   }
-  .flag-alert h4 { font-size: 14px; font-weight: 700; color: #DC2626; margin-bottom: 4px; }
+  .flag-alert h4 { font-size: 14px; font-weight: 700; color: #ffaaa5; margin-bottom: 4px; }
   .flag-alert p  { font-size: 13px; color: var(--text); margin-bottom: 4px; }
-  .flag-alert .flag-meta { font-size: 11px; color: var(--text-muted); }
-
-  /* ── BADGE DASHBOARD ────────────────────────────────────── */
-  .milestone-card {
-    background: var(--surface); border-radius: var(--radius);
-    padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-  }
-  .milestone-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
-  .progress-bar-outer {
-    background: var(--surface2); border-radius: 20px; height: 10px;
-    margin: 8px 0 4px; overflow: hidden;
-  }
-  .progress-bar-inner {
-    height: 100%; border-radius: 20px;
-    background: linear-gradient(90deg, var(--blue), var(--green));
-    transition: width 0.5s ease;
-  }
-  .progress-label {
-    display: flex; justify-content: space-between;
-    font-size: 12px; color: var(--text-muted);
-  }
-  .oas-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; margin-bottom: 12px;
-  }
-  .oas-stream {
-    background: var(--surface); border-radius: var(--radius-sm);
-    padding: 14px; box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-  }
-  .oas-stream-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-  .oas-stage-dots { display: flex; gap: 4px; flex-wrap: wrap; }
-  .stage-dot {
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: 700;
-  }
-  .stage-dot.awarded    { background: var(--green); color: white; }
-  .stage-dot.pending    { background: #FEF3C7; color: #B45309; }
-  .stage-dot.empty      { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
-  .next-badge-card {
-    background: linear-gradient(135deg, #F59E0B, #D97706);
-    border-radius: var(--radius); padding: 18px; color: white; margin-bottom: 16px;
-  }
-  .next-badge-card h3 { font-size: 13px; opacity: 0.9; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .next-badge-card p  { font-size: 17px; font-weight: 700; line-height: 1.3; }
-  .next-badge-card .next-actions { margin-top: 12px; font-size: 13px; opacity: 0.9; }
-  .challenge-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 0; border-bottom: 1px solid var(--border);
-  }
-  .challenge-row:last-child { border-bottom: none; }
-  .challenge-icon { font-size: 24px; flex-shrink: 0; }
-  .challenge-info { flex: 1; }
-  .challenge-name { font-size: 14px; font-weight: 600; }
-  .challenge-count { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .member-select-row {
-    display: flex; align-items: center; gap: 14px;
-    min-height: 74px; background: var(--surface);
-    border: 1px solid var(--line); border-radius: 24px;
-    padding: 14px 16px; box-shadow: 0 10px 26px rgba(0,0,0,.14);
-    cursor: pointer; transition: transform .14s ease;
-  }
-  .member-select-row:active { transform: scale(0.985); }
+  .flag-alert .flag-meta { font-size: 11px; color: var(--muted); }
 
   /* ── BADGE SCREENS — own back-links, hide global back-bar ── */
   body:has(#screen-badges.active) #back-bar,
@@ -591,7 +454,7 @@
   .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 18px; }
   .stat { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: 22px; padding: 14px; text-align: center; }
   .stat b { font-size: 28px; line-height: 1; font-weight: 900; display: block; }
-  .stat span { display: block; margin-top: 5px; color: rgba(255,255,255,.7); font-size: 12px; font-weight: 900; }
+  .stat span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 900; }
 
   /* ── PROGRESS TRACK (badge dashboard rows) ──────────────── */
   .progress-track { height: 12px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
@@ -632,6 +495,11 @@
     margin-bottom: 0;
   }
 
+  /* ── BACK BAR — fixed home shortcut shown on sub-screens ── */
+  #back-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0)); z-index: 200; }
+  #back-bar button { display: flex; align-items: center; gap: 8px; background: none; border: none; color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; padding: 0; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+  #back-bar button span { font-size: 22px; line-height: 1; }
+
 </style>
 </head>
 <body>
@@ -640,7 +508,11 @@
 <div class="app-header" id="app-header" style="display:none">
   <div class="header-inner">
     <div class="header-left">
-      <div class="header-mark">⚜</div>
+      <div class="header-mark">
+        <svg width="20" height="20" viewBox="96 112 118 104" aria-hidden="true" focusable="false">
+          <path fill="white" d="M132.67,171.9c-.32,7.1-5.76,21.26-14.58,21.26-6.47,0-11.5-5.67-12.02-11.86,7.89,1.78,15.8-.06,16.87-9.17,0-.05.01-.13.02-.22h9.71ZM135.47,171.9c-.69,6.73-3.1,14.96-7.9,21.6,3.31,7.23,10.59,14.49,18.48,19.04,7.88-4.55,15.16-11.81,18.48-19.04-4.8-6.64-7.21-14.87-7.9-21.6h-21.15ZM169.15,172.13c0-.05-.01-.13-.02-.22h-9.71c.32,7.1,5.76,21.26,14.58,21.26,6.47,0,11.5-5.67,12.02-11.86-7.89,1.78-15.8-.06-16.87-9.17ZM192.46,116.17c-20.98.03-33.07,27.2-33.07,46.86h-2.79c0-26.92,15.17-36.29,15.17-54.33,0-8.69-4.61-18.66-14.28-25.91-1.29-.97-7.67-5.74-11.45-9.82-3.78,4.08-10.15,8.85-11.45,9.82-9.67,7.25-14.28,17.22-14.28,25.91,0,18.04,15.17,27.41,15.17,54.33h-2.79c0-19.66-12.08-46.83-33.07-46.86-14.94-.02-25.25,14.24-22.17,28.39,2.07,9.47,10.7,17.78,20.96,16.36-1.74-6.57,1.28-13.95,8.48-14.99,8.32-1.2,13.38,7.32,14.93,17.1h-.14c-1.69,0-3.06,1.37-3.06,3.06s1.37,3.06,3.06,3.06h48.71c1.69,0,3.06-1.37,3.06-3.06s-1.37-3.06-3.06-3.06h-.14c1.56-9.77,6.61-18.3,14.93-17.1,7.2,1.04,10.22,8.43,8.48,14.99,10.26,1.42,18.9-6.89,20.96-16.36,3.08-14.15-7.23-28.41-22.17-28.39Z"/>
+        </svg>
+      </div>
       <div>
         <h1>Princes Park</h1>
         <p id="header-role">Loading…</p>
@@ -702,7 +574,7 @@
 
   <!-- Tile grid (populated by renderHomeTiles) -->
   <div class="section-title">Next actions</div>
-  <div class="tile-grid home-grid" id="home-grid"></div>
+  <div class="home-grid" id="home-grid"></div>
 
   <!-- Recent events (populated by renderHomeEvents) -->
   <div class="section-title">Recent</div>
@@ -830,12 +702,9 @@
 </nav>
 
 <!-- Fixed back-to-home bar shown on all non-home screens -->
-<div id="back-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0));z-index:200;">
-  <button onclick="showTab('home')" style="display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--text-muted);font-size:15px;font-weight:700;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;">
-    <span style="font-size:22px;line-height:1">←</span> Home
-  </button>
+<div id="back-bar" style="display:none">
+  <button onclick="showTab('home')"><span>←</span> Home</button>
 </div>
-<span id="chat-badge" style="display:none"></span>
 
 
 
@@ -882,12 +751,12 @@
 
   <!-- Flags alert for supervisors -->
   <div id="flags-section" style="display:none">
-    <div class="section-title" style="color:#ffaaa5">⚠️ Flagged messages</div>
+    <div class="section-title" style="color:#ffaaa5">Flagged messages</div>
     <div id="flags-list"></div>
   </div>
 
   <div id="channels-list">
-    <div class="section-title" style="margin-top:24px">All channels</div>
+    <div class="section-title">All channels</div>
     <div class="channel-section"><div class="loading-block"><div class="spinner dark"></div><p>Loading…</p></div></div>
   </div>
 </div>
@@ -1063,7 +932,7 @@ function renderChannels() {
 
   let html = '';
   if (pinned.length) {
-    html += `<div class="section-title" style="margin-top:24px">Pinned</div>
+    html += `<div class="section-title">Pinned</div>
              <div class="channel-section">${pinned.map(renderChannelRow).join('')}</div>`;
   }
   if (others.length) {
@@ -1314,7 +1183,7 @@ function renderMemberPicker() {
   ];
 
   if (!allMembers.length) {
-    picker.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px">Load members first</div>';
+    picker.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">Load members first</div>';
     return;
   }
 
@@ -1380,7 +1249,7 @@ function showToast(msg, type = 'info') {
     document.body.appendChild(el);
   }
   el.textContent = msg;
-  el.style.background = type === 'error' ? '#E74C3C' : type === 'success' ? '#27AE60' : '#00348D';
+  el.style.background = type === 'error' ? 'var(--bad)' : type === 'success' ? 'var(--good)' : 'var(--brand-dark-blue)';
   el.style.opacity = '1';
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.style.opacity = '0'; }, 3000);
@@ -1717,11 +1586,10 @@ async function doLogin() {
     state.token           = data.token;
     state.memberId        = data.member_id;
     state.unitId          = data.unit_id;
-  state.unitIds         = data.unit_ids || (data.unit_id ? [data.unit_id] : []);
-  state.unitIds         = data.unit_ids || (data.unit_id ? [data.unit_id] : []);
-    state.selectedUnitId  = data.unit_id;  // default to own unit
+    state.unitIds         = data.unit_ids || (data.unit_id ? [data.unit_id] : []);
+    state.selectedUnitId  = data.unit_id;
     state.role            = data.role;
-    state.name            = data.name || data.member_id; // comes from members API now
+    state.name            = data.name || data.member_id;
     state.terrainMemberId = data.terrain_member_id;
 
     // Save session
@@ -1803,11 +1671,12 @@ function renderHomeTiles() {
   const greeting = hour < 12 ? 'Good morning 🌅' : hour < 17 ? 'Good afternoon ☀️' : 'Good evening 👋';
   document.getElementById('home-greeting').textContent = greeting;
 
+  const SVG = (paths) => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
   // Define tiles — Messages, Badges, Events, Profile (Roll Call access is via primary panel)
   const tiles = [
     {
       id: 'chat',
-      icon: '💬',
+      icon: SVG('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
       name: 'Messages',
       desc: 'Chat with your group',
       leaderOnly: false,
@@ -1816,7 +1685,7 @@ function renderHomeTiles() {
     },
     {
       id: 'badges',
-      icon: '🏅',
+      icon: SVG('<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>'),
       name: 'Badges',
       desc: 'OAS & achievements',
       leaderOnly: false,
@@ -1825,7 +1694,7 @@ function renderHomeTiles() {
     },
     {
       id: 'events',
-      icon: '📅',
+      icon: SVG('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
       name: 'Events',
       desc: 'Upcoming meetings',
       leaderOnly: false,
@@ -1834,7 +1703,7 @@ function renderHomeTiles() {
     },
     {
       id: 'profile',
-      icon: '👤',
+      icon: SVG('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
       name: 'Profile',
       desc: 'Your details',
       leaderOnly: false,
@@ -1982,7 +1851,7 @@ function renderNextEvent() {
     '6ed6a27f': '#C8830A', 'a1fb7ab1': '#B45309',
     '054bc5df': '#166534', 'c5bfe4a0': '#6B21A8', '6fe441ab': '#991B1B',
   };
-  const col = SECTION_COLORS[(ev.unit_id||'').slice(0,8)] || 'var(--navy)';
+  const col = SECTION_COLORS[(ev.unit_id||'').slice(0,8)] || 'var(--brand-navy)';
   document.getElementById('home-next-day').textContent  = d.getDate();
   document.getElementById('home-next-mon').textContent  = d.toLocaleString('en-AU',{month:'short'});
   document.getElementById('home-next-date').style.background = col;
@@ -2066,15 +1935,15 @@ async function selectEvent(eventId) {
   document.getElementById('roll-title').textContent    = ev.title || 'Meeting';
   document.getElementById('roll-date').textContent     =
     d.toLocaleString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
-  document.getElementById('roll-location').textContent = ev.location ? '📍 ' + ev.location : '';
+  document.getElementById('roll-location').textContent = ev.location || '';
 
   // Program info
   const descEl = document.getElementById('roll-description');
   if (descEl) descEl.textContent = ev.description || '';
 
   const CHALLENGE_LABELS = {
-    community: '🌏 Community', creative: '🎨 Creative',
-    outdoors: '🌲 Outdoors', personal_growth: '🌱 Personal Growth',
+    community: 'Community', creative: 'Creative',
+    outdoors: 'Outdoors', personal_growth: 'Personal Growth',
   };
   const chalEl = document.getElementById('roll-challenge');
   if (chalEl) {
@@ -2142,11 +2011,11 @@ function updateRollMode() {
   bar.id = 'roll-status-bar';
 
   if (isConcluded && !editMode) {
-    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(37,183,85,0.12);border:1px solid rgba(37,183,85,0.3);color:#4DCF7C;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px';
-    bar.innerHTML = '<span>✓ Finalised in Terrain</span><button onclick="enterRollEditMode()" style="background:rgba(37,183,85,0.2);color:#4DCF7C;border:1px solid rgba(37,183,85,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Edit roll</button>';
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(12,174,75,.12);border:1px solid rgba(12,174,75,.30);color:#89e8af;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;margin-bottom:12px;font-family:var(--font)';
+    bar.innerHTML = '<span>Finalised in Terrain</span><button onclick="enterRollEditMode()" style="background:rgba(12,174,75,.18);color:#89e8af;border:1px solid rgba(12,174,75,.35);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Edit roll</button>';
   } else if (isConcluded && editMode) {
-    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(244,168,0,0.12);border:1px solid rgba(244,168,0,0.3);color:#F4A800;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px';
-    bar.innerHTML = '<span>⚠️ Editing finalised roll</span><button onclick="cancelRollEdit()" style="background:transparent;border:1px solid rgba(244,168,0,0.4);color:#F4A800;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Cancel</button>';
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(255,198,46,.12);border:1px solid rgba(255,198,46,.30);color:#ffe09b;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;margin-bottom:12px;font-family:var(--font)';
+    bar.innerHTML = '<span>Editing finalised roll</span><button onclick="cancelRollEdit()" style="background:transparent;border:1px solid rgba(255,198,46,.35);color:#ffe09b;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Cancel</button>';
   }
 
   if (bar.innerHTML) {
