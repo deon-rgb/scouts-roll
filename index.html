@@ -280,20 +280,16 @@
   .hero-stat .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
 
   /* ── EVENT CARDS ────────────────────────────────────────── */
-  /* ── SECTION PICKER ─────────────────────────────── */
-  .section-tile {
-    display: flex; align-items: center; gap: 14px;
-    background: var(--surface); border-radius: var(--radius);
-    padding: 16px; margin-bottom: 10px;
-    cursor: pointer; border: 2px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .section-tile:active { transform: scale(0.98); }
-  .section-tile-icon { font-size: 28px; width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
-  .section-tile-name { font-size: 16px; font-weight: 700; color: var(--text); }
-  .section-tile-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  /* ── SECTION CARD ───────────────────────────────── */
+  .section-card { position: relative; overflow: hidden; min-height: 108px; border: 0; border-radius: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; color: white; background: var(--section); box-shadow: 0 18px 44px rgba(0,0,0,.24); cursor: pointer; width: 100%; font-family: inherit; }
+  .section-card.cub { color: #11131c; }
+  .section-card .section-name { font-size: 31px; font-weight: 900; letter-spacing: -.05em; }
+  .section-card .chevron { color: currentColor; opacity: .85; }
+  .section-card.dark { background: var(--surface); border: 1px solid var(--line); color: var(--text); }
+  .back-link { appearance: none; border: 0; background: transparent; color: var(--muted); font-weight: 900; font-size: 15px; padding: 0; margin: 0 0 26px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .back-link .chev { font-size: 22px; line-height: 1; }
+  .divider { display: flex; align-items: center; gap: 14px; margin: 26px 0 16px; color: var(--subtle); font-size: 12px; font-weight: 900; letter-spacing: .14em; }
+  .divider::before, .divider::after { content: ""; height: 1px; background: var(--line); flex: 1; }
 
   .event-card {
     background: var(--surface);
@@ -708,36 +704,19 @@
   }
   .member-select-row:active { transform: scale(0.98); }
 
-  /* Section picker */
-  #screen-roll-section { padding: 0; max-width: 100%; }
-  .sp-page { padding: 24px 20px 40px; max-width: 430px; margin: 0 auto; }
-  .sp-h1 { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 900; letter-spacing: -0.045em; color: var(--text); }
-  .sp-intro { margin: 10px 0 30px; color: var(--text-muted); font-size: 16px; line-height: 1.4; font-weight: 700; }
+  /* ── SECTION PICKER SCREEN ──────────────────────── */
+  body:has(#screen-roll-section.active) #back-bar { display: none !important; }
+  #screen-roll-section { padding: 24px 20px 40px; max-width: 460px; }
+  /* sp-* classes match .section-card visual style (JS generates these class names) */
   .sp-buttons { display: grid; gap: 16px; }
-  .sp-btn {
-    height: 116px; width: 100%; border: 0; border-radius: 30px;
-    padding: 0 26px; display: flex; align-items: center;
-    justify-content: space-between; color: white;
-    box-shadow: 0 18px 36px rgba(0,0,0,.22);
-    font-family: inherit; cursor: pointer;
-  }
-  .sp-btn.sp-cub { color: #071629; }
-  .sp-btn-name { font-size: 31px; font-weight: 900; letter-spacing: -0.045em; }
-  .sp-btn-arrow { font-size: 38px; font-weight: 900; line-height: 1; opacity: 0.9; }
-  .sp-divider {
-    display: flex; align-items: center; gap: 14px;
-    margin: 26px 0 16px; color: #6F8197;
-    font-size: 12px; font-weight: 900; letter-spacing: 0.14em;
-  }
-  .sp-divider::before, .sp-divider::after { content: ""; height: 1px; background: var(--border); flex: 1; }
-  .sp-all-btn {
-    height: 96px; width: 100%; border: 1px solid var(--border);
-    border-radius: 28px; padding: 0 26px;
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--surface); color: var(--text);
-    font-family: inherit; box-shadow: 0 14px 30px rgba(0,0,0,.16); cursor: pointer;
-  }
-  .sp-all-btn .sp-btn-name { font-size: 28px; }
+  .sp-btn { min-height: 108px; width: 100%; border: 0; border-radius: 30px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 18px 44px rgba(0,0,0,.24); font-family: inherit; cursor: pointer; position: relative; overflow: hidden; }
+  .sp-btn.sp-cub { color: #11131c; }
+  .sp-btn-name { font-size: 31px; font-weight: 900; letter-spacing: -.05em; }
+  .sp-btn-arrow { font-size: 28px; line-height: 1; color: currentColor; opacity: .85; font-weight: 900; }
+  .sp-divider { display: flex; align-items: center; gap: 14px; margin: 26px 0 16px; color: var(--subtle); font-size: 12px; font-weight: 900; letter-spacing: .14em; }
+  .sp-divider::before, .sp-divider::after { content: ""; height: 1px; background: var(--line); flex: 1; }
+  .sp-all-btn { min-height: 108px; width: 100%; border: 1px solid var(--line); border-radius: 30px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; background: var(--surface); color: var(--text); font-family: inherit; box-shadow: 0 14px 38px rgba(0,0,0,.22); cursor: pointer; }
+  .sp-all-btn .sp-btn-name { font-size: 31px; }
 
   /* ── LOGIN MODAL ────────────────────────────────────────── */
   #login-modal {
@@ -834,13 +813,10 @@
 <!-- ROLL TAB -->
 <!-- ROLL: SECTION PICKER -->
 <div id="screen-roll-section" class="screen">
-  <div class="sp-page">
-    <h1 class="sp-h1">Select a section</h1>
-    <div class="sp-intro">Choose which section you're taking attendance for.</div>
-    <div id="section-picker-list">
-      <!-- Rendered by renderSectionPicker() -->
-    </div>
-  </div>
+  <button class="back-link" onclick="showTab('home')"><span class="chev">←</span> Home</button>
+  <h1 class="screen-title">Roll call</h1>
+  <p class="screen-subtitle">Choose a section and go straight to its meetings.</p>
+  <div id="section-picker-list"></div>
 </div>
 
 <!-- ROLL: EVENTS LIST -->
