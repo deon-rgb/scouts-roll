@@ -183,7 +183,7 @@
   /* ── HOME SCREEN ────────────────────────────────────────── */
   /* Hide app-header on home tab — home has its own topbar */
   body:has(#screen-home.active) #app-header { display: none !important; }
-  #screen-home { padding: 24px 20px 40px; max-width: 460px; }
+  #screen-home { padding: 24px 20px 56px; max-width: 960px; }
 
   .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
   .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 900; color: var(--muted); margin: 0 0 8px; }
@@ -213,6 +213,7 @@
 
   /* Home tile grid — JS populates with .home-tile elements via renderHomeTiles() */
   .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (min-width: 760px) { .home-grid { grid-template-columns: repeat(4, 1fr); } }
   .home-tile { min-height: 144px; border: 1px solid var(--line); background: var(--surface); border-radius: 28px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; color: var(--text); box-shadow: var(--shadow-soft); transition: transform .14s ease; }
   .home-tile:active { transform: scale(0.985); }
   .home-tile-icon { width: 42px; height: 42px; border-radius: 16px; background: var(--surface-raised); display: grid; place-items: center; font-size: 22px; line-height: 1; }
@@ -370,7 +371,7 @@
   #screen-profile { padding: 24px 20px 80px; max-width: 460px; }
 
   /* ── CHAT — CHANNELS LIST ───────────────────────────────────── */
-  #screen-chat { max-width: 460px; padding: 24px 20px 100px; }
+  #screen-chat { max-width: 720px; padding: 24px 20px 100px; }
   .safe-note { font-size: 13px; line-height: 1.35; color: var(--muted); font-weight: 750; background: rgba(255,255,255,.055); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; }
   .unread-dot { width: 11px; height: 11px; background: var(--cub); border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,198,46,.12); flex-shrink: 0; }
   #channels-list { display: grid; gap: 12px; margin-top: 4px; }
@@ -413,6 +414,23 @@
   @media (min-width: 600px) {
     .chat-screen { left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; }
   }
+
+  @media (min-width: 760px) {
+    .screen { padding-left: 28px; padding-right: 28px; }
+    #screen-home { padding: 32px 40px 72px; }
+    #screen-chat { padding: 32px 40px 100px; }
+    #screen-roll-section, #screen-roll-list { padding: 32px 28px 56px; }
+    #screen-roll-take { padding: 32px 28px 0; }
+    #screen-profile { padding: 32px 28px 80px; }
+    #screen-badges, #screen-badge-members { padding: 32px 28px 80px; }
+    .home-tile { min-height: 160px; }
+    .display-name { font-size: 48px; }
+    .screen-title { font-size: 42px; }
+    .topbar { margin-bottom: 32px; }
+    .header-inner { max-width: 960px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+    #back-bar { padding-left: 40px; padding-right: 40px; }
+  }
+
   .chat-top {
     position: sticky; top: 0;
     background: rgba(7,11,29,.88); backdrop-filter: blur(18px);
@@ -696,6 +714,10 @@
   <!-- Tile grid (populated by renderHomeTiles) -->
   <div class="section-title">Next actions</div>
   <div class="tile-grid home-grid" id="home-grid"></div>
+
+  <!-- Recent events (populated by renderHomeEvents) -->
+  <div class="section-title">Recent</div>
+  <div class="row-list" id="home-events-list"></div>
 
 </div>
 
@@ -1704,17 +1726,8 @@ function renderHomeTiles() {
   const greeting = hour < 12 ? 'Good morning 🌅' : hour < 17 ? 'Good afternoon ☀️' : 'Good evening 👋';
   document.getElementById('home-greeting').textContent = greeting;
 
-  // Define tiles — leaders see all, youth see subset
+  // Define tiles — Messages, Badges, Events, Profile (Roll Call access is via primary panel)
   const tiles = [
-    {
-      id: 'roll',
-      icon: '✅',
-      name: 'Roll Call',
-      desc: 'Take attendance',
-      leaderOnly: true,
-      action: () => showTab('roll'),
-      badgeId: null,
-    },
     {
       id: 'chat',
       icon: '💬',
@@ -1731,6 +1744,15 @@ function renderHomeTiles() {
       desc: 'OAS & achievements',
       leaderOnly: false,
       action: () => showTab('badges'),
+      badgeId: null,
+    },
+    {
+      id: 'events',
+      icon: '📅',
+      name: 'Events',
+      desc: 'Upcoming meetings',
+      leaderOnly: false,
+      action: () => showTab('roll'),
       badgeId: null,
     },
     {
