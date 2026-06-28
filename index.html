@@ -300,6 +300,10 @@
   .event-card { display: flex; align-items: center; gap: 14px; min-height: 92px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(0,0,0,.14); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .14s ease; }
   .event-card:active { transform: scale(0.985); }
   .event-card.roll-missing { border-color: rgba(255,198,46,.45); }
+  /* .date-badge — design system date block (grey surface, replaces .event-date) */
+  .date-badge { width: 58px; flex: 0 0 58px; background: var(--surface-raised); border: 1px solid var(--line); border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 6px; gap: 2px; }
+  .date-badge b { font-size: 22px; line-height: 1; font-weight: 900; color: var(--text); }
+  .date-badge span { font-size: 11px; text-transform: uppercase; font-weight: 900; color: var(--muted); letter-spacing: .04em; }
   .event-date { width: 58px; height: 58px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; }
   .event-date .day { font-size: 22px; line-height: 1; font-weight: 900; color: white; }
   .event-date .mon { font-size: 11px; text-transform: uppercase; font-weight: 900; color: rgba(255,255,255,.8); letter-spacing: .04em; }
@@ -325,19 +329,22 @@
   .quick-btn { flex: 1; min-height: 56px; border-radius: 20px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-weight: 900; font-size: 17px; cursor: pointer; }
   .quick-btn:active { background: rgba(255,255,255,.06); }
 
-  /* Member rows (JS-generated) — styled as .row + .member-row from design system */
+  /* Member rows — .row + .member-row per design system */
   .member-row { display: flex; align-items: center; gap: 14px; min-height: 78px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(0,0,0,.14); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .14s ease; }
   .member-row.present { border-color: rgba(12,174,75,.48); background: linear-gradient(180deg,rgba(12,174,75,.12),rgba(12,174,75,.04)),var(--surface); }
   .member-row:active { transform: scale(0.985); }
-  .member-avatar { width: 48px; height: 48px; border-radius: 17px; background: var(--surface-raised); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--text); flex: 0 0 auto; font-size: 15px; }
-  .member-row.present .member-avatar { background: rgba(12,174,75,.18); border-color: rgba(12,174,75,.35); color: #baf2cc; }
+  /* .initials — design system avatar pill */
+  .initials, .member-avatar { width: 48px; height: 48px; border-radius: 17px; background: var(--surface-raised); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--text); flex: 0 0 auto; font-size: 15px; }
+  .member-row.present .initials, .member-row.present .member-avatar { background: rgba(12,174,75,.18); border-color: rgba(12,174,75,.35); color: #baf2cc; }
   .member-name { font-size: 17px; font-weight: 900; letter-spacing: -.015em; }
   .member-sub { font-size: 13px; font-weight: 750; color: var(--muted); margin-top: 3px; }
-  /* .check-circle restyled as a sliding toggle (matches .toggle in design system) */
-  .check-circle { width: 64px; height: 40px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid var(--line); position: relative; flex: 0 0 auto; font-size: 0; }
-  .check-circle::after { content: ""; position: absolute; top: 4px; left: 4px; width: 30px; height: 30px; border-radius: 50%; background: #7e8ba7; transition: all .16s; }
-  .member-row.present .check-circle { background: var(--good); border-color: var(--good); }
-  .member-row.present .check-circle::after { left: 28px; background: white; }
+  /* .toggle — design system sliding toggle (replaces .check-circle) */
+  .toggle, .check-circle { width: 64px; height: 40px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid var(--line); position: relative; flex: 0 0 auto; font-size: 0; }
+  .toggle::after, .check-circle::after { content: ""; position: absolute; top: 4px; left: 4px; width: 30px; height: 30px; border-radius: 50%; background: #7e8ba7; transition: all .16s; }
+  .member-row.present .toggle, .member-row.present .check-circle { background: var(--good); border-color: var(--good); }
+  .member-row.present .toggle::after, .member-row.present .check-circle::after { left: 28px; background: white; }
+  /* .row.roll-missing — event card with outstanding roll */
+  .row.roll-missing { border-color: rgba(255,198,46,.45); }
 
   /* Save footer — sticky bottom, JS shows/hides via .save-bar class */
   .save-bar { position: sticky; bottom: 0; margin: 24px -20px 0; padding: 14px 20px max(20px,env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(7,11,29,0),rgba(7,11,29,.94) 20%,var(--bg)); display: flex; gap: 12px; }
@@ -765,10 +772,10 @@
     <p class="screen-subtitle" id="roll-location" style="margin-bottom:22px"></p>
     <p id="roll-description" style="font-size:13px;color:rgba(255,255,255,.6);margin:6px 0 0;font-style:italic"></p>
     <div id="roll-challenge" style="margin-top:6px"></div>
-    <div class="att-bar">
-      <span class="att-num" id="att-num">0</span>
-      <span class="att-total" id="att-total">of 0</span>
-      <span class="att-lbl">present</span>
+    <div class="stat-grid" style="margin-top:20px">
+      <div class="stat"><b id="att-num">0</b><span>present</span></div>
+      <div class="stat"><b id="att-expected">0</b><span>expected</span></div>
+      <div class="stat"><b id="att-left">0</b><span>left</span></div>
     </div>
   </section>
 
@@ -779,9 +786,9 @@
 
   <div class="row-list" id="member-list"></div>
 
-  <div class="save-bar">
+  <div class="sticky-footer save-bar">
     <button class="button ghost" style="flex:0 0 72px" onclick="goBack()">←</button>
-    <button class="button success" style="flex:1" id="btn-save-roll" onclick="doSaveRoll()">Save roll</button>
+    <button class="button success full" id="btn-save-roll" onclick="doSaveRoll()">Save roll</button>
   </div>
 </div>
 
@@ -793,8 +800,8 @@
         <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
       </div>
       <h1 class="screen-title">Roll saved</h1>
-      <p class="screen-subtitle">Attendance is ready to sync to Terrain.</p>
-      <section class="card card-pad success-detail" id="success-detail" style="text-align:left;margin:28px 0"></section>
+      <p class="screen-subtitle" id="success-subtitle">Attendance is ready to sync to Terrain.</p>
+      <section class="card card-pad" id="success-detail" style="text-align:left;margin:28px 0"></section>
       <button class="button primary full" onclick="showTab('roll')">Back to events</button>
     </section>
   </div>
@@ -1809,29 +1816,29 @@ function renderSectionPicker() {
     ? SECTIONS.filter(s => unitIds.some(uid => uid.startsWith(s.id.slice(0,8))))
     : SECTIONS;
 
-  const brandColor = {
-    'Joeys':     'var(--joey)',
-    'Cubs':      'var(--cub)',
-    'Scouts':    'var(--scout)',
-    'Venturers': 'var(--venturer)',
-    'Rovers':    'var(--rover)',
+  const sectionVar = {
+    'Joeys':     '--joey',
+    'Cubs':      '--cub',
+    'Scouts':    '--scout',
+    'Venturers': '--venturer',
+    'Rovers':    '--rover',
   };
 
   list.innerHTML = `
-    <div class="sp-buttons">
+    <div class="row-list" style="gap:16px">
       ${visible.map(s => `
-        <button class="sp-btn${s.name === 'Cubs' ? ' sp-cub' : ''}"
-          style="background:${brandColor[s.name] || s.color}"
+        <button class="section-card${s.name === 'Cubs' ? ' cub' : ''}"
+          style="--section:var(${sectionVar[s.name] || '--navy'})"
           onclick="selectSection('${s.id}','${s.name}','${s.color}')">
-          <span class="sp-btn-name">${s.name}</span>
-          <span class="sp-btn-arrow">›</span>
+          <span class="section-name">${s.name}</span>
+          <span class="chevron">›</span>
         </button>
       `).join('')}
     </div>
-    <div class="sp-divider">OR</div>
-    <button class="sp-all-btn" onclick="selectSection('all','All Sections','#00348D')">
-      <span class="sp-btn-name">All Sections</span>
-      <span class="sp-btn-arrow">›</span>
+    <div class="divider">ALL</div>
+    <button class="section-card dark" onclick="selectSection('all','All Sections','#00348D')">
+      <span class="section-name">All Sections</span>
+      <span class="chevron">›</span>
     </button>
   `;
 }
@@ -1956,40 +1963,23 @@ function eventCardHTML(ev, compact) {
   const hasAtt     = (ev.attendee_count || 0) > 0;
   const isPast     = new Date(ev.start_datetime) < new Date();
 
-  // Badge logic:
-  // - concluded + has attendance = Roll taken (green)
-  // - concluded + no attendance = No roll recorded (grey, less alarming)
-  // - upcoming = Upcoming (blue)
-  // - past but not concluded = Roll missing (amber - needs action)
-  let badgeClass, badgeText;
-  if (concluded && hasAtt)       { badgeClass = 'badge-done';    badgeText = '✓ Roll taken'; }
-  else if (concluded && !hasAtt) { badgeClass = 'badge-grey';    badgeText = 'No roll recorded'; }
-  else if (!concluded && isPast) { badgeClass = 'badge-missing'; badgeText = '⚠ Roll missing'; }
-  else                           { badgeClass = 'badge-future';  badgeText = 'Upcoming'; }
+  let pillClass, pillText;
+  if (concluded && hasAtt)       { pillClass = 'good'; pillText = 'Roll saved'; }
+  else if (concluded && !hasAtt) { pillClass = '';     pillText = 'No roll'; }
+  else if (!concluded && isPast) { pillClass = 'warn'; pillText = 'Roll due'; }
+  else                           { pillClass = 'blue'; pillText = 'Upcoming'; }
 
-  const onclick = state.role === 'leader' ? `selectEvent('${ev.id}')` : '';
+  const onclick   = state.role === 'leader' ? `onclick="selectEvent('${ev.id}')"` : '';
+  const isMissing = concluded && !hasAtt;
 
-  const SECTION_COLORS = {
-    '6ed6a27f': '#C8830A', '6ed6a27f-e76': '#C8830A',
-    'a1fb7ab1': '#B45309',
-    '054bc5df': '#166534',
-    'c5bfe4a0': '#6B21A8',
-    '6fe441ab': '#991B1B',
-  };
-  const unitShort  = (ev.unit_id || '').slice(0,8);
-  const dateColor  = SECTION_COLORS[unitShort] || 'var(--navy)';
-
-  return `<div class="event-card ${concluded && !hasAtt ? 'roll-missing' : ''}" onclick="${onclick}">
-    <div class="event-date" style="background:${dateColor}">
-      <div class="day">${day}</div>
-      <div class="mon">${mon}</div>
+  return `<div class="row${isMissing ? ' roll-missing' : ''}" style="min-height:92px;${state.role === 'leader' ? 'cursor:pointer' : ''}" ${onclick}>
+    <div class="date-badge"><b>${day}</b><span>${mon}</span></div>
+    <div class="row-main">
+      <div class="row-title">${ev.title || 'Meeting'}</div>
+      <div class="row-sub">${time}${ev.location ? ' · ' + ev.location : ''}</div>
     </div>
-    <div class="event-info">
-      <div class="event-name">${ev.title || 'Meeting'}</div>
-      <div class="event-meta">${time}${ev.location ? ' · ' + ev.location : ''}</div>
-      <span class="event-badge ${badgeClass}">${badgeText}</span>
-    </div>
-    ${state.role === 'leader' ? '<div style="color:#9CA3AF;font-size:20px">›</div>' : ''}
+    <span class="pill${pillClass ? ' ' + pillClass : ''}">${pillText}</span>
+    ${state.role === 'leader' ? '<div class="chevron">›</div>' : ''}
   </div>`;
 }
 
@@ -2090,7 +2080,7 @@ function updateRollMode() {
   }
 
   if (bar.innerHTML) {
-    document.querySelector('.att-bar')?.after(bar);
+    document.querySelector('.stat-grid')?.after(bar);
   }
 }
 
@@ -2113,21 +2103,22 @@ function renderMemberList(readOnly = false) {
     return;
   }
   list.innerHTML = state.members.map(m => {
-    const id      = m.id;
-    const present = !!state.attendance[id];
-    const first   = m.first_name || '?';
-    const last    = m.last_name  || '';
+    const id       = m.id;
+    const present  = !!state.attendance[id];
+    const first    = m.first_name || '?';
+    const last     = m.last_name  || '';
     const initials = ((first[0]||'') + (last[0]||'')).toUpperCase();
-    const patrol  = m.patrol || '';
+    const patrol   = m.patrol || '';
+    const sub      = patrol || (present ? '' : 'Not marked');
     const clickHandler = readOnly ? '' : `onclick="toggleMember('${id}')"`;
     const rowStyle = readOnly ? 'opacity:0.85;cursor:default' : '';
-    return `<div class="member-row ${present?'present':''}" id="mr-${id}" ${clickHandler} style="${rowStyle}">
-      <div class="member-avatar">${initials}</div>
-      <div style="flex:1;min-width:0">
-        <div class="member-name">${first} ${last}</div>
-        ${patrol ? `<div class="member-sub">${patrol}</div>` : ''}
+    return `<div class="row member-row ${present?'present':''}" id="mr-${id}" ${clickHandler} style="${rowStyle}">
+      <div class="initials">${initials}</div>
+      <div class="row-main">
+        <div class="row-title">${first} ${last}</div>
+        ${sub ? `<div class="row-sub">${sub}</div>` : ''}
       </div>
-      <div class="check-circle">✓</div>
+      <div class="toggle"></div>
     </div>`;
   }).join('');
 }
@@ -2149,9 +2140,14 @@ function markAll(val) {
 }
 
 function updateAttCount() {
-  const n = Object.values(state.attendance).filter(Boolean).length;
-  document.getElementById('att-num').textContent   = n;
-  document.getElementById('att-total').textContent = 'of ' + state.members.length;
+  const n     = Object.values(state.attendance).filter(Boolean).length;
+  const total = state.members.length;
+  const left  = Math.max(0, total - n);
+  document.getElementById('att-num').textContent = n;
+  const expEl  = document.getElementById('att-expected');
+  const leftEl = document.getElementById('att-left');
+  if (expEl)  expEl.textContent  = total;
+  if (leftEl) leftEl.textContent = left;
 }
 
 async function doSaveRoll() {
@@ -2193,11 +2189,13 @@ async function doSaveRoll() {
       syncLine = '⚠️ Saved locally — Terrain push failed, will retry tonight';
     }
 
+    const sectionName  = (SECTIONS.find(s => state.selectedUnitId && state.selectedUnitId.startsWith(s.id.slice(0,8))) || {}).name || '';
+    const dateLabel    = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    const subtitleEl   = document.getElementById('success-subtitle');
+    if (subtitleEl) subtitleEl.textContent = `${presentIds.length} present from ${state.members.length} expected. ${syncLine.replace(/^[✅⚠️]+\s*/,'').split('—')[0].trim()}.`;
     document.getElementById('success-detail').innerHTML = `
-      <div><span class="lbl">Event</span>${state.currentEvent.title}</div>
-      <div><span class="lbl">Date</span>${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long'})}</div>
-      <div><span class="lbl">Present</span>${presentIds.length} of ${state.members.length} members</div>
-      <div><span class="lbl">Status</span>${syncLine}</div>
+      <div class="row-title">${state.currentEvent.title}</div>
+      <div class="row-sub">${[sectionName, dateLabel, syncLine].filter(Boolean).join(' · ')}</div>
     `;
 
     if (state.currentEvent?.status === 'concluded') {
