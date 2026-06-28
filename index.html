@@ -291,41 +291,21 @@
   .divider { display: flex; align-items: center; gap: 14px; margin: 26px 0 16px; color: var(--subtle); font-size: 12px; font-weight: 900; letter-spacing: .14em; }
   .divider::before, .divider::after { content: ""; height: 1px; background: var(--line); flex: 1; }
 
-  .event-card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 10px;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: border-color 0.15s, transform 0.1s;
-    user-select: none;
-  }
-  .event-card:active { transform: scale(0.98); }
-  .event-card.roll-missing { border-color: #FEF3C7; }
-  .event-date {
-    background: var(--navy);
-    color: white;
-    border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    text-align: center;
-    min-width: 46px;
-    flex-shrink: 0;
-  }
-  .event-date .day { font-size: 20px; font-weight: 800; line-height: 1; }
-  .event-date .mon { font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.5px; }
+  /* ── EVENT CARDS (JS renders .event-card into #roll-events-list) ── */
+  .event-card { display: flex; align-items: center; gap: 14px; min-height: 92px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(0,0,0,.14); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .14s ease; }
+  .event-card:active { transform: scale(0.985); }
+  .event-card.roll-missing { border-color: rgba(255,198,46,.45); }
+  .event-date { width: 58px; height: 58px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .event-date .day { font-size: 22px; line-height: 1; font-weight: 900; color: white; }
+  .event-date .mon { font-size: 11px; text-transform: uppercase; font-weight: 900; color: rgba(255,255,255,.8); letter-spacing: .04em; }
   .event-info { flex: 1; min-width: 0; }
-  .event-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-  .event-meta { font-size: 12px; color: var(--text-muted); }
-  .event-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; display: inline-block; margin-top: 4px; }
-  .badge-missing { background: #FEF3C7; color: #B45309; }
-  .badge-done    { background: #D1FAE5; color: #065F46; }
-  .badge-future  { background: #EFF6FF; color: #1D4ED8; }
-  .badge-grey    { background: #F3F4F6; color: #6B7280; }
+  .event-name { font-size: 17px; font-weight: 900; letter-spacing: -.015em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .event-meta { font-size: 13px; font-weight: 750; color: var(--muted); margin-top: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .event-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 900; white-space: nowrap; margin-top: 5px; border: 1px solid transparent; }
+  .badge-done    { background: rgba(12,174,75,.15);   border-color: rgba(12,174,75,.32);   color: #89e8af; }
+  .badge-grey    { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.09); color: var(--muted); }
+  .badge-missing { background: rgba(255,198,46,.14);  border-color: rgba(255,198,46,.35);  color: #ffe09b; }
+  .badge-future  { background: rgba(61,92,147,.28);   border-color: rgba(61,92,147,.45);   color: #dbe8ff; }
 
   /* ── ROLL SCREEN ────────────────────────────────────────── */
   .roll-event-header {
@@ -704,9 +684,11 @@
   }
   .member-select-row:active { transform: scale(0.98); }
 
-  /* ── SECTION PICKER SCREEN ──────────────────────── */
-  body:has(#screen-roll-section.active) #back-bar { display: none !important; }
-  #screen-roll-section { padding: 24px 20px 40px; max-width: 460px; }
+  /* ── SECTION PICKER / EVENTS LIST SCREENS ───────── */
+  body:has(#screen-roll-section.active) #back-bar,
+  body:has(#screen-roll-list.active) #back-bar { display: none !important; }
+  #screen-roll-section,
+  #screen-roll-list { padding: 24px 20px 40px; max-width: 460px; }
   /* sp-* classes match .section-card visual style (JS generates these class names) */
   .sp-buttons { display: grid; gap: 16px; }
   .sp-btn { min-height: 108px; width: 100%; border: 0; border-radius: 30px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 18px 44px rgba(0,0,0,.24); font-family: inherit; cursor: pointer; position: relative; overflow: hidden; }
@@ -821,14 +803,14 @@
 
 <!-- ROLL: EVENTS LIST -->
 <div id="screen-roll-list" class="screen">
-  <div id="roll-section-header" style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
-    <div id="roll-section-dot" style="width:12px;height:12px;border-radius:50%;background:var(--navy)"></div>
-    <span id="roll-section-label" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">All sections</span>
-  </div>
-  <div class="section-label">Select a meeting</div>
-  <div id="roll-events-list">
+  <button class="back-link" onclick="goBack()"><span class="chev">←</span> Sections</button>
+  <p class="eyebrow" id="roll-section-label">All sections</p>
+  <h1 class="screen-title">Choose event</h1>
+  <p class="screen-subtitle">Pick the activity you're taking attendance for.</p>
+  <div class="row-list" id="roll-events-list">
     <div class="loading-block"><div class="spinner dark"></div><p>Loading events…</p></div>
   </div>
+  <div id="roll-section-dot" style="display:none"></div>
   <!-- Keep hidden unit-selector for compatibility -->
   <select id="unit-selector" style="display:none" onchange="onUnitChange()">
     <option value="054bc5df-bb9d-4ef9-a041-1a22518c4d1a">Scouts</option>
