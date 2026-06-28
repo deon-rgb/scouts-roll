@@ -384,156 +384,132 @@
   .profile-role { font-size: 13px; opacity: 0.7; }
   .profile-unit { font-size: 13px; opacity: 0.7; margin-top: 2px; }
 
-  /* ── CHAT ──────────────────────────────────────────────────── */
+  /* ── CHAT — CHANNELS LIST ───────────────────────────────────── */
+  #screen-chat { max-width: 460px; padding: 24px 20px 100px; }
+  .safe-note { font-size: 13px; line-height: 1.35; color: var(--muted); font-weight: 750; background: rgba(255,255,255,.055); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; }
+  .unread-dot { width: 11px; height: 11px; background: var(--cub); border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,198,46,.12); flex-shrink: 0; }
+  #channels-list { display: grid; gap: 12px; margin-top: 4px; }
   .channel-card {
-    background: var(--surface); border-radius: var(--radius);
-    padding: 14px 16px; margin-bottom: 8px;
-    box-shadow: var(--shadow); cursor: pointer;
-    display: flex; align-items: center; gap: 12px;
-    border: 1.5px solid var(--border); transition: border-color 0.15s;
-    min-height: 44px;
+    display: flex; align-items: center; gap: 14px;
+    min-height: 74px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 24px;
+    padding: 14px 16px; box-shadow: 0 10px 26px rgba(0,0,0,.14);
+    cursor: pointer; transition: transform .14s ease;
   }
-  .channel-card:active { transform: scale(0.98); }
+  .channel-card:active { transform: scale(0.985); }
   .channel-icon {
-    width: 44px; height: 44px; border-radius: var(--radius-sm);
-    background: var(--navy); color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
+    width: 52px; height: 52px; border-radius: 18px;
+    background: var(--surface-raised);
+    display: grid; place-items: center;
+    font-size: 22px; flex-shrink: 0; font-weight: 900;
   }
-  .channel-icon.patrol  { background: #8B5CF6; }
-  .channel-icon.project { background: #F59E0B; }
-  .channel-icon.council { background: #10B981; }
-  .channel-icon.direct  { background: #3B82F6; }
-  .channel-icon.leaders { background: #EF4444; }
+  .channel-icon.patrol  { background: rgba(139,92,246,.22); }
+  .channel-icon.project { background: rgba(245,158,11,.18); }
+  .channel-icon.council { background: rgba(16,185,129,.18); }
+  .channel-icon.direct  { background: rgba(59,130,246,.20); }
+  .channel-icon.leaders { background: rgba(239,68,68,.18); }
   .channel-info { flex: 1; min-width: 0; }
-  .channel-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-  .channel-preview { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .channel-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-  .channel-badge {
-    background: var(--blue); color: white;
-    border-radius: 20px; font-size: 11px; font-weight: 700;
-    padding: 2px 7px; flex-shrink: 0;
-  }
-  .channel-tag {
-    font-size: 10px; font-weight: 700; padding: 2px 6px;
-    border-radius: 20px; display: inline-block; margin-top: 3px;
-  }
-  .tag-finite   { background: #FEF3C7; color: #B45309; }
-  .tag-ongoing  { background: #D1FAE5; color: #065F46; }
-  .tag-flag     { background: #FEE2E2; color: #DC2626; }
+  .channel-name { font-size: 17px; font-weight: 900; letter-spacing: -.015em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .channel-preview { font-size: 13px; color: var(--muted); font-weight: 750; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .channel-meta { font-size: 12px; color: var(--subtle); margin-top: 3px; }
+  .channel-badge { background: var(--action-bright); color: white; border-radius: 999px; font-size: 11px; font-weight: 900; padding: 4px 9px; flex-shrink: 0; }
+  .channel-tag { font-size: 11px; font-weight: 900; padding: 4px 9px; border-radius: 999px; display: inline-flex; margin-top: 3px; }
+  .tag-finite  { background: rgba(61,92,147,.28); border: 1px solid rgba(61,92,147,.45); color: #dbe8ff; }
+  .tag-ongoing { background: rgba(12,174,75,.15); border: 1px solid rgba(12,174,75,.32); color: #89e8af; }
+  .tag-flag    { background: rgba(222,42,38,.16); border: 1px solid rgba(222,42,38,.35); color: #ffaaa5; }
 
-  /* Message screen */
-  .chat-header {
-    background: var(--surface);
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-  }
-  .chat-header h2 { font-size: 16px; font-weight: 700; flex: 1; }
-  .chat-header p  { font-size: 12px; color: var(--text-muted); }
-  .chat-back { background: none; border: none; color: var(--text); font-size: 22px; cursor: pointer; padding: 0 4px; min-height: 44px; }
-
-  .messages-container {
-    flex: 1; overflow-y: auto; padding: 16px;
-    display: flex; flex-direction: column; gap: 10px;
-    padding-bottom: 80px;
-  }
-
-  .message-bubble {
-    max-width: 80%; display: flex; flex-direction: column;
-  }
-  .message-bubble.mine   { align-self: flex-end; align-items: flex-end; }
-  .message-bubble.theirs { align-self: flex-start; align-items: flex-start; }
-
-  .bubble-sender {
-    font-size: 11px; color: var(--text-muted);
-    margin-bottom: 3px; font-weight: 600;
-  }
-  .bubble-content {
-    padding: 10px 14px; border-radius: var(--radius-sm);
-    font-size: 15px; line-height: 1.4; word-break: break-word;
-  }
-  .message-bubble.mine   .bubble-content { background: var(--blue); color: white; border-bottom-right-radius: 4px; }
-  .message-bubble.theirs .bubble-content { background: var(--surface2); color: var(--text); border-bottom-left-radius: 4px; }
-  .message-bubble.leader .bubble-content { background: var(--surface2); border-left: 3px solid var(--blue); }
-
-  .bubble-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-  .bubble-flag { font-size: 10px; color: #DC2626; margin-top: 2px; }
-
-  .message-input-bar {
-    position: fixed; bottom: 65px; left: 0; right: 0;
-    background: var(--surface); border-top: 1px solid var(--border);
-    padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end;
-    z-index: 150;
-  }
-  .message-input {
-    flex: 1; padding: 10px 14px;
-    border: 1.5px solid var(--border); border-radius: 20px;
-    font-size: 15px; outline: none; resize: none;
-    max-height: 120px; line-height: 1.4;
-    font-family: 'Nunito Sans', system-ui, sans-serif;
-    background: var(--bg); color: var(--text);
-  }
-  .message-input:focus { border-color: var(--blue); }
-  .send-btn {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--blue); color: white; border: none;
-    font-size: 18px; cursor: pointer; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s;
-  }
-  .send-btn:active { transform: scale(0.9); }
-  .send-btn:disabled { opacity: 0.4; }
-
+  /* ── CHAT — THREAD VIEW ─────────────────────────────────────── */
   .chat-screen {
     display: none; flex-direction: column;
-    height: calc(100dvh - 65px); overflow: hidden;
-    position: fixed; top: 0; left: 0; right: 0; bottom: 65px;
-    background: var(--bg); z-index: 100;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg); z-index: 100; overflow: hidden;
   }
   .chat-screen.active { display: flex; }
-
-  /* On desktop, constrain chat to app width */
   @media (min-width: 600px) {
-    .chat-screen {
-      left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 560px;
-    }
-    .message-input-bar {
-      left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 560px;
-    }
+    .chat-screen { left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; }
   }
+  .chat-top {
+    position: sticky; top: 0;
+    background: rgba(7,11,29,.88); backdrop-filter: blur(18px);
+    padding: 20px; border-bottom: 1px solid var(--line); z-index: 10;
+    flex-shrink: 0;
+  }
+  #messages-container {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 20px 20px 110px;
+  }
+  .message-bubble {
+    max-width: 82%; border-radius: 22px; padding: 12px 15px;
+    background: var(--surface); border: 1px solid var(--line);
+    box-shadow: 0 8px 22px rgba(0,0,0,.12);
+    font-weight: 750; line-height: 1.36;
+    display: flex; flex-direction: column;
+  }
+  .message-bubble.mine   { align-self: flex-end; background: var(--brand-medium-blue); border-color: transparent; }
+  .message-bubble.theirs { align-self: flex-start; }
+  .message-bubble.leader { border-left: 3px solid var(--brand-medium-blue); }
+  .bubble-sender { font-size: 12px; color: var(--muted); font-weight: 900; margin-bottom: 3px; }
+  .bubble-content { font-size: 15px; line-height: 1.4; word-break: break-word; }
+  .message-bubble.mine .bubble-content { color: white; }
+  .bubble-time { font-size: 11px; color: var(--subtle); font-weight: 800; margin-top: 5px; }
+  .bubble-flag { font-size: 10px; color: #ffaaa5; margin-top: 2px; }
+  .composer {
+    position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 100%; max-width: 520px;
+    padding: 12px 14px max(14px,env(safe-area-inset-bottom));
+    background: rgba(7,11,29,.92); backdrop-filter: blur(18px);
+    border-top: 1px solid var(--line); display: flex; gap: 10px;
+    z-index: 150;
+  }
+  .composer input {
+    flex: 1; min-height: 48px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface);
+    color: var(--text); padding: 0 16px; font-weight: 750; outline: none;
+  }
+  .composer input:focus { border-color: var(--brand-medium-blue); }
+  .composer button {
+    width: 48px; height: 48px; border-radius: 50%; border: 0;
+    background: var(--brand-medium-blue); color: white;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .composer button:disabled { opacity: 0.4; }
 
-  /* New channel modal */
+  /* ── CHAT — NEW CHANNEL MODAL ────────────────────────────────── */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7); z-index: 300;
+    background: rgba(0,0,0,0.72); z-index: 300;
     align-items: flex-end; justify-content: center;
   }
   .modal-overlay.show { display: flex; }
   .modal-sheet {
-    background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
-    border-top: 1px solid var(--border);
-    padding: 24px; width: 100%; max-width: 560px;
-    max-height: 80vh; overflow-y: auto;
+    background: linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)),var(--surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border: 1px solid var(--line); border-bottom: 0;
+    padding: 26px; width: 100%; max-width: 560px;
+    max-height: 88vh; overflow-y: auto;
   }
-  .modal-sheet h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+  .modal-sheet h3 { font-size: 28px; font-weight: 900; letter-spacing: -.04em; color: var(--text); margin-bottom: 6px; }
+  .modal-sheet .modal-subtitle { font-size: 15px; color: var(--muted); font-weight: 750; margin-bottom: 24px; }
   .modal-close {
     float: right; background: none; border: none;
-    font-size: 24px; cursor: pointer; color: var(--text-muted);
-    margin-top: -4px;
+    font-size: 24px; cursor: pointer; color: var(--muted);
+    margin-top: -2px;
   }
-  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   .type-btn {
-    padding: 14px 10px; border: 2px solid var(--border);
-    border-radius: var(--radius-sm); background: var(--surface2);
-    cursor: pointer; text-align: center; transition: all 0.15s;
+    min-height: 110px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 24px;
+    padding: 16px; text-align: left; color: var(--text);
+    cursor: pointer; transition: border-color .14s, background .14s;
   }
-  .type-btn.selected { border-color: var(--blue); background: rgba(0,109,223,0.15); }
-  .type-btn .type-icon { font-size: 24px; margin-bottom: 4px; }
-  .type-btn .type-name { font-size: 13px; font-weight: 700; color: var(--text); }
-  .type-btn .type-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .type-btn.selected {
+    border-color: var(--brand-medium-blue);
+    background: linear-gradient(180deg,rgba(61,92,147,.25),rgba(61,92,147,.08)),var(--surface);
+  }
+  .type-btn .type-icon { display: block; font-size: 22px; margin-bottom: 8px; }
+  .type-btn .type-name { display: block; font-size: 16px; font-weight: 900; line-height: 1.1; color: var(--text); }
+  .type-btn .type-desc { display: block; color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 8px; }
 
   /* Flags badge */
   .flag-alert {
@@ -851,20 +827,22 @@
 
 <!-- CHAT CHANNEL LIST -->
 <div id="screen-chat" class="screen">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div class="section-label" style="margin:0">Messages</div>
-    <button onclick="showNewChannelModal()"
-      style="background:var(--navy);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">
-      + New
-    </button>
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Messages</p>
+      <h1 class="screen-title">Channels</h1>
+    </div>
+    <button class="button" style="min-height:46px;border-radius:16px;font-size:15px" onclick="showNewChannelModal()">New</button>
   </div>
+  <section class="safe-note">Messages are group-based and visible to appropriate leaders for child safety. No private adult-youth direct messages.</section>
 
   <!-- Flags alert for supervisors -->
   <div id="flags-section" style="display:none">
-    <div class="section-label">⚠️ Flagged messages</div>
+    <div class="section-title" style="color:#ffaaa5">⚠️ Flagged messages</div>
     <div id="flags-list"></div>
   </div>
 
+  <div class="section-title" style="margin-top:24px">All channels</div>
   <div id="channels-list">
     <div class="loading-block"><div class="spinner dark"></div><p>Loading…</p></div>
   </div>
@@ -872,23 +850,29 @@
 
 <!-- CHAT MESSAGE VIEW -->
 <div id="screen-chat-view" class="chat-screen">
-  <div class="chat-header">
-    <button class="chat-back" onclick="closeChatView()">←</button>
-    <div style="flex:1;min-width:0">
-      <h2 id="chat-view-title">Channel</h2>
-      <p id="chat-view-meta"></p>
+  <div class="chat-top">
+    <button class="back-link" style="margin-bottom:16px" onclick="closeChatView()"><span class="chev">←</span>Channels</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <p class="eyebrow">Messages</p>
+        <h1 style="font-size:28px;line-height:1;margin:0;font-weight:900;letter-spacing:-.04em" id="chat-view-title">Chat</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="pill" id="chat-view-meta"></span>
+        <div id="chat-view-badges"></div>
+      </div>
     </div>
-    <div id="chat-view-badges"></div>
   </div>
-  <div class="messages-container" id="messages-container">
+  <div id="messages-container">
     <div class="loading-block"><div class="spinner dark"></div><p>Loading messages…</p></div>
   </div>
-  <div class="message-input-bar">
-    <textarea class="message-input" id="message-input"
-      placeholder="Type a message…" rows="1"
+  <div class="composer">
+    <input id="message-input" placeholder="Message…"
       oninput="autoResize(this)"
-      onkeydown="handleMessageKey(event)"></textarea>
-    <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+      onkeydown="handleMessageKey(event)">
+    <button id="send-btn" onclick="sendMessage()" aria-label="Send">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+    </button>
   </div>
 </div>
 
@@ -896,14 +880,14 @@
 <div class="modal-overlay" id="new-channel-modal">
   <div class="modal-sheet">
     <button class="modal-close" onclick="closeNewChannelModal()">×</button>
-    <h3>New conversation</h3>
+    <h3>New channel</h3>
+    <p class="modal-subtitle">Create a supervised group conversation for a section, patrol or project.</p>
 
-    <div class="section-label">Type</div>
     <div class="type-grid" id="channel-type-grid">
       <div class="type-btn selected" onclick="selectChannelType('unit')" id="type-unit">
         <div class="type-icon">📢</div>
         <div class="type-name">Unit announcement</div>
-        <div class="type-desc">Everyone in the unit</div>
+        <div class="type-desc">Everyone in the selected unit</div>
       </div>
       <div class="type-btn" onclick="selectChannelType('patrol')" id="type-patrol">
         <div class="type-icon">🏕️</div>
@@ -913,7 +897,7 @@
       <div class="type-btn" onclick="selectChannelType('project')" id="type-project">
         <div class="type-icon">⚡</div>
         <div class="type-name">Project group</div>
-        <div class="type-desc">Temporary — closes when done</div>
+        <div class="type-desc">Temporary planning group</div>
       </div>
       <div class="type-btn" onclick="selectChannelType('council')" id="type-council">
         <div class="type-icon">⭐</div>
@@ -932,28 +916,26 @@
       </div>
     </div>
 
-    <div id="channel-name-field" class="field">
+    <div id="channel-name-field" class="input-group">
       <label>Channel name</label>
       <input type="text" id="new-channel-name" placeholder="e.g. Red Patrol chat" />
     </div>
 
-    <div class="field" id="members-field">
+    <div class="input-group" id="members-field">
       <label>Add members</label>
-      <div id="member-picker" style="max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;padding:8px"></div>
+      <div id="member-picker" style="max-height:200px;overflow-y:auto;background:var(--surface-raised);border:1px solid var(--line);border-radius:18px;padding:8px"></div>
     </div>
 
-    <div id="finite-field" class="field" style="display:none">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+    <div id="finite-field" class="input-group" style="display:none">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:750;color:var(--muted)">
         <input type="checkbox" id="is-finite" style="width:18px;height:18px" />
         <span>Close this group when the project is done</span>
       </label>
     </div>
 
-    <div style="background:rgba(0,109,223,0.12);border:1px solid rgba(0,109,223,0.25);border-radius:10px;padding:12px;font-size:13px;color:#7BB8FF;margin-bottom:16px">
-      ⚠️ All messages are visible to group supervisors for child safety purposes (Two Present Leadership).
-    </div>
+    <section class="safe-note" style="margin-bottom:20px">All messages are visible to group supervisors for child safety purposes.</section>
 
-    <button class="btn btn-primary" onclick="createChannel()">Create</button>
+    <button class="button primary full" onclick="createChannel()">Create channel</button>
   </div>
 </div>
 
